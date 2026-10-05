@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Card, StatusBadge, Button, LoadingState, EmptyState } from '../../components';
+import { Card, StatusBadge, Button, LoadingState, EmptyState, Icon } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { requestsApi } from '../../services/api';
 import { BloodRequest } from '../../types';
@@ -66,7 +66,7 @@ export const HospitalHomeScreen = ({ navigation }: any) => {
 
         {isAccepted && item.acceptedDonorName ? (
           <View style={styles.acceptedBanner}>
-            <Text style={styles.acceptedIcon}>✅</Text>
+            <Icon name="check" size={18} color={colors.statusAccepted} strokeWidth={2.5} />
             <View>
               <Text style={styles.acceptedTitle}>Donor Accepted!</Text>
               <Text style={styles.acceptedDonor}>{item.acceptedDonorName} is preparing to donate</Text>
@@ -74,9 +74,12 @@ export const HospitalHomeScreen = ({ navigation }: any) => {
           </View>
         ) : (
           <View style={styles.matchingInfo}>
-            <Text style={styles.candidateCount}>
-              📢 {item.matchedCandidates?.length || 0} Nearby Donors Notified
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="megaphone" size={14} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={styles.candidateCount}>
+                {item.matchedCandidates?.length || 0} Nearby Donors Notified
+              </Text>
+            </View>
             <Text style={styles.timestamp}>
               Created {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>

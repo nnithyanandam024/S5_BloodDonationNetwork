@@ -7,3 +7,4 @@ export * from './Header';
 export * from './LoadingState';
 export * from './EmptyState';
 export * from './Modal';
+export * from './Icon/Icon';

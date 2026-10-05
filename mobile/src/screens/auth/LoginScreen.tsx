@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Input, Button, Card } from '../../components';
+import { Input, Button, Card, Icon } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { apiClient } from '../../services/api';
 
@@ -54,7 +54,7 @@ export const LoginScreen = ({ navigation }: any) => {
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.header}>
           <View style={styles.logoBadge}>
-            <Text style={styles.logoIcon}>🩸</Text>
+            <Icon name="droplet" size={32} color="#DC2626" strokeWidth={2.2} />
           </View>
           <Text style={styles.title}>BloodNet</Text>
           <Text style={styles.subtitle}>Emergency Blood Donation Network</Text>
@@ -125,9 +125,12 @@ export const LoginScreen = ({ navigation }: any) => {
           style={styles.configToggle}
           onPress={() => setShowConfig(!showConfig)}
         >
-          <Text style={styles.configToggleText}>
-            ⚙️ {showConfig ? 'Hide Server Settings' : 'Configure Server Endpoint'}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <Icon name="gear" size={16} color={colors.textSecondary} strokeWidth={2} />
+            <Text style={styles.configToggleText}>
+              {showConfig ? 'Hide Server Settings' : 'Configure Server Endpoint'}
+            </Text>
+          </View>
         </TouchableOpacity>
 
         {showConfig && (

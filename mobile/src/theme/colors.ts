@@ -37,4 +37,32 @@ export const colors = {
   statusNotifiedBg: '#FEF3C7',
   statusCompleted: '#475569',
   statusCompletedBg: '#F1F5F9',
+
+  // UI Reference Palette (Signature Violet / Soft Pastels / Dark Accents)
+  violetPrimary: '#7047EB',
+  violetDark: '#562DD4',
+  violetLight: '#8C68FC',
+  violetMuted: '#E4DCFD',
+  violetSoft: '#F3EFFF',
+  violetCardBg: '#6F45EC',
+  violetCardEnd: '#875BFF',
+
+  darkPill: '#151622',
+  darkPillText: '#FFFFFF',
+
+  // Category Pastel Tones
+  catPinkBg: '#FDECEF',
+  catPinkIcon: '#E11D48',
+  catPeachBg: '#FFF2E8',
+  catPeachIcon: '#F97316',
+  catLavenderBg: '#F1ECFE',
+  catLavenderIcon: '#7C3AED',
+  catCyanBg: '#E2F6FC',
+  catCyanIcon: '#0284C7',
+
+  // Floating tab bar
+  tabBarBg: '#FFFFFF',
+  tabBarActive: '#7047EB',
+  tabBarInactive: '#9CA3AF',
+  tabBarFab: '#7047EB',
 };

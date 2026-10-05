@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Card, StatusBadge, Button, LoadingState, Header } from '../../components';
+import { Card, StatusBadge, Button, LoadingState, Header, Icon } from '../../components';
 import { requestsApi } from '../../services/api';
 import { BloodRequest, RequestState } from '../../types';
 
@@ -130,7 +130,7 @@ export const RequestDetailsScreen = ({ route, navigation }: any) => {
         {isAccepted && request.acceptedDonorName ? (
           <Card variant="outlined" style={styles.acceptedCard}>
             <View style={styles.acceptedHeader}>
-              <Text style={styles.acceptedIcon}>🎉</Text>
+              <Icon name="sparkles" size={24} color={colors.statusAccepted} strokeWidth={2.2} />
               <View style={styles.acceptedTitleWrap}>
                 <Text style={styles.acceptedTitle}>DONOR ACCEPTED!</Text>
                 <Text style={styles.acceptedSub}>
@@ -177,7 +177,10 @@ export const RequestDetailsScreen = ({ route, navigation }: any) => {
           </Card>
         ) : (
           <Card variant="outlined" style={styles.waitingCard}>
-            <Text style={styles.waitingTitle}>⏳ Awaiting Donor Responses</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.xs }}>
+              <Icon name="clock" size={16} color={colors.textSecondary} strokeWidth={2} />
+              <Text style={styles.waitingTitle}>Awaiting Donor Responses</Text>
+            </View>
             <Text style={styles.waitingSub}>
               Matching engine notified {request.matchedCandidates?.length || 0} eligible candidates in radius.
               Dashboard updates live as soon as a donor accepts.

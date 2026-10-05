@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Input, Button, Card, BloodGroupSelector, Header } from '../../components';
+import { Input, Button, Card, BloodGroupSelector, Header, Icon } from '../../components';
 import { useAuth } from '../../store/AuthContext';
 import { BloodGroup, UserRole } from '../../types';
 
@@ -85,17 +85,33 @@ export const RegisterScreen = ({ navigation }: any) => {
             style={[styles.roleTab, role === 'DONOR' && styles.roleTabActive]}
             onPress={() => setRole('DONOR')}
           >
-            <Text style={[styles.roleTabText, role === 'DONOR' && styles.roleTabTextActive]}>
-              🩸 Blood Donor
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Icon
+                name="droplet"
+                size={16}
+                color={role === 'DONOR' ? colors.textInverse : colors.primary}
+                strokeWidth={2.2}
+              />
+              <Text style={[styles.roleTabText, role === 'DONOR' && styles.roleTabTextActive]}>
+                Blood Donor
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.roleTab, role === 'HOSPITAL' && styles.roleTabActive]}
             onPress={() => setRole('HOSPITAL')}
           >
-            <Text style={[styles.roleTabText, role === 'HOSPITAL' && styles.roleTabTextActive]}>
-              🏥 Hospital / Clinic
-            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Icon
+                name="hospital"
+                size={16}
+                color={role === 'HOSPITAL' ? colors.textInverse : colors.primary}
+                strokeWidth={2}
+              />
+              <Text style={[styles.roleTabText, role === 'HOSPITAL' && styles.roleTabTextActive]}>
+                Hospital / Clinic
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
 
