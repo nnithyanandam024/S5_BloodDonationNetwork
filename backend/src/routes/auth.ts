@@ -85,7 +85,8 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const user = userRepository.findByEmail(email);
+    const normalizedEmail = String(email).trim().toLowerCase();
+    const user = userRepository.findByEmail(normalizedEmail);
     if (!user) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;

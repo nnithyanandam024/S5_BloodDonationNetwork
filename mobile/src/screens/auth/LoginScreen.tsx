@@ -231,11 +231,11 @@ export const LoginScreen = ({ navigation }: any) => {
               <TouchableOpacity
                 style={[
                   styles.presetChip,
-                  serverUrl.includes('10.10.187.171') && styles.presetChipActive,
+                  serverUrl.includes('10.40.27.205') && styles.presetChipActive,
                 ]}
-                onPress={() => applyPreset('http://10.10.187.171:5000/api')}
+                onPress={() => applyPreset('http://10.40.27.205:5000/api')}
               >
-                <Text style={styles.presetChipText}>📶 Wi-Fi (10.10.187.171)</Text>
+                <Text style={styles.presetChipText}>📶 Wi-Fi (10.40.27.205)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity

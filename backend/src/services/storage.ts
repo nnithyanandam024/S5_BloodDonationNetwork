@@ -218,7 +218,7 @@ export class StorageService {
   }
 
   public getUserByEmail(email: string): (BaseUser | DonorProfile | HospitalProfile) | undefined {
-    return this.users.get(email.toLowerCase());
+    return this.users.get(email.trim().toLowerCase());
   }
 
   public getUserById(id: string): (BaseUser | DonorProfile | HospitalProfile) | undefined {
@@ -226,7 +226,7 @@ export class StorageService {
   }
 
   public saveUser(user: BaseUser | DonorProfile | HospitalProfile): void {
-    this.users.set(user.email.toLowerCase(), user);
+    this.users.set(user.email.trim().toLowerCase(), user);
     this.users.set(user.id, user);
   }
 

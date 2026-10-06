@@ -40,6 +40,7 @@ export const getCandidateApiUrls = (): string[] => {
   candidates.push('http://127.0.0.1:5000/api');
 
   // Development computer LAN IP
+  candidates.push('http://10.40.27.205:5000/api');
   candidates.push('http://10.10.187.171:5000/api');
 
   // Android emulator loopback alias
