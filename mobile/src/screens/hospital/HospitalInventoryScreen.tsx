@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, typography, spacing } from '../../theme';
-import { Card, Header, Button } from '../../components';
+import { colors, typography, spacing, borderRadius } from '../../theme';
+import { Card, Button, Icon } from '../../components';
 import { BloodGroup } from '../../types';
 import { useAuth } from '../../store/AuthContext';
 
@@ -24,27 +24,78 @@ const SAMPLE_INVENTORY: InventoryEntry[] = [
 ];
 
 export const HospitalInventoryScreen = ({ navigation }: any) => {
-  const { logout, switchUserRole } = useAuth();
+  const { switchUserRole } = useAuth();
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <Header title="Blood Bank & Inventory" subtitle="Current on-site reserves" />
+    <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {/* Top Header */}
+      <View style={styles.screenHeader}>
+        <Text style={styles.screenCenterTitle}>Blood Bank Reserves</Text>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.iconCircleBtn}
+          onPress={() => navigation.navigate('CreateRequest')}
+        >
+          <Icon name="plus" size={18} color="#7047EB" strokeWidth={2.5} />
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={SAMPLE_INVENTORY}
         keyExtractor={(item) => item.group}
         numColumns={2}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryLeft}>
+              <View style={styles.summaryIconSquircle}>
+                <Icon name="flask" size={22} color="#7047EB" strokeWidth={2.2} />
+              </View>
+              <View>
+                <Text style={styles.summaryTitle}>Total Reserves: 47 Units</Text>
+                <Text style={styles.summarySub}>8 Blood groups monitored 24/7</Text>
+              </View>
+            </View>
+            <View style={styles.livePulseBadge}>
+              <View style={styles.pulseDot} />
+              <Text style={styles.pulseText}>LIVE</Text>
+            </View>
+          </View>
+        }
         renderItem={({ item }) => {
           const isCritical = item.status === 'CRITICAL';
           const isLow = item.status === 'LOW';
 
           return (
             <Card variant="outlined" style={styles.gridCard}>
-              <View style={styles.groupBadge}>
-                <Text style={styles.groupText}>{item.group}</Text>
+              <View
+                style={[
+                  styles.groupBadgeSquircle,
+                  isCritical
+                    ? styles.badgeCritical
+                    : isLow
+                    ? styles.badgeLow
+                    : styles.badgeOptimal,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.groupText,
+                    isCritical
+                      ? { color: '#DC2626' }
+                      : isLow
+                      ? { color: '#D97706' }
+                      : { color: '#7047EB' },
+                  ]}
+                >
+                  {item.group}
+                </Text>
               </View>
+
               <Text style={styles.unitsNum}>{item.units}</Text>
               <Text style={styles.unitsLabel}>Units in Stock</Text>
+
               <View
                 style={[
                   styles.statusTag,
@@ -74,9 +125,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
         ListFooterComponent={
           <View style={styles.footer}>
             <Button
-              title="Request Transfer from Blood Bank"
-              variant="outline"
-              size="sm"
+              title="+ Request Blood Bank Restock"
               onPress={() => navigation.navigate('CreateRequest')}
               style={styles.transferBtn}
             />
@@ -89,17 +138,11 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
               <Button
                 title="Switch to Donor View"
                 onPress={() => switchUserRole('DONOR')}
-                variant="secondary"
+                variant="outline"
                 size="sm"
+                style={{ marginTop: 8 }}
               />
             </Card>
-
-            <Button
-              title="Sign Out"
-              variant="outline"
-              onPress={logout}
-              style={styles.logoutBtn}
-            />
           </View>
         }
       />
@@ -110,87 +153,189 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8F9FE',
+  },
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  iconCircleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  screenCenterTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#1F2937',
+  },
+  summaryCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#F0F1F7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  summaryLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  summaryIconSquircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#F3EFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  summaryTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  summarySub: {
+    fontSize: 11,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  livePulseBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    gap: 5,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  pulseDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#16A34A',
+  },
+  pulseText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#16A34A',
   },
   list: {
-    padding: spacing.lg,
+    paddingHorizontal: 16,
+    paddingBottom: 110,
   },
   gridCard: {
     flex: 1,
-    margin: spacing.xs,
+    margin: 6,
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: 18,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#F0F1F7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.02,
+    shadowRadius: 6,
+    elevation: 1,
   },
-  groupBadge: {
-    backgroundColor: colors.primaryLight,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 2,
-    borderRadius: 999,
-    marginBottom: spacing.xs,
+  groupBadgeSquircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  badgeOptimal: {
+    backgroundColor: '#EDE9FE',
+  },
+  badgeLow: {
+    backgroundColor: '#FEF3C7',
+  },
+  badgeCritical: {
+    backgroundColor: '#FEE2E2',
   },
   groupText: {
-    fontSize: typography.sizes.md,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
+    fontSize: 18,
+    fontWeight: '800',
   },
   unitsNum: {
-    fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
   },
   unitsLabel: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    fontSize: 11,
+    color: '#6B7280',
+    marginBottom: 8,
+    marginTop: 2,
   },
   statusTag: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
   },
   statusTagOptimal: {
-    backgroundColor: colors.statusAcceptedBg,
+    backgroundColor: '#DCFCE7',
   },
   statusTagLow: {
-    backgroundColor: colors.statusUrgentBg,
+    backgroundColor: '#FEF3C7',
   },
   statusTagCritical: {
-    backgroundColor: colors.statusCriticalBg,
+    backgroundColor: '#FEE2E2',
   },
   statusTagText: {
     fontSize: 10,
-    fontWeight: typography.weights.bold,
+    fontWeight: '700',
   },
   statusTagTextOptimal: {
-    color: colors.statusAccepted,
+    color: '#15803D',
   },
   statusTagTextLow: {
-    color: colors.statusUrgent,
+    color: '#B45309',
   },
   statusTagTextCritical: {
-    color: colors.statusCritical,
+    color: '#B91C1C',
   },
   footer: {
-    marginTop: spacing.md,
+    marginTop: 16,
   },
   transferBtn: {
-    marginBottom: spacing.md,
+    marginBottom: 16,
   },
   demoCard: {
-    marginBottom: spacing.md,
+    borderRadius: 20,
+    marginBottom: 20,
+    backgroundColor: '#F3EFFF',
+    padding: 16,
   },
   demoTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#7047EB',
   },
   demoDesc: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    fontSize: 12,
+    color: '#6B7280',
     marginTop: 2,
-  },
-  logoutBtn: {
-    marginBottom: spacing.xl,
   },
 });

@@ -18,13 +18,18 @@ export const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
     switch (routeName) {
       case 'Home':
         return 'home';
+      case 'Dashboard':
+        return 'hospital';
       case 'Requests':
       case 'Services':
         return 'shield';
       case 'History':
       case 'Benefits':
         return 'sparkles';
+      case 'Inventory':
+        return 'flask';
       case 'Profile':
+      case 'Facility':
       case 'Buy':
         return 'user';
       case 'Reference':
@@ -38,12 +43,16 @@ export const CustomBottomTabBar: React.FC<CustomBottomTabBarProps> = ({
     switch (routeName) {
       case 'Home':
         return 'Home';
+      case 'Dashboard':
+        return 'Dashboard';
       case 'Requests':
-        return 'Policies';
+        return 'Requests';
       case 'History':
-        return 'Benefits';
+        return 'History';
+      case 'Inventory':
+        return 'Reserves';
       case 'Profile':
-        return 'Buy';
+        return 'Facility';
       case 'Reference':
         return 'Design UI';
       default:

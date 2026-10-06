@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
@@ -19,6 +20,46 @@ export const LoginScreen = ({ navigation }: any) => {
   const [password, setPassword] = useState('');
   const [showConfig, setShowConfig] = useState(false);
   const [serverUrl, setServerUrl] = useState(apiClient.getBaseUrl());
+  const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
+  const [connDetails, setConnDetails] = useState<string>('');
+
+  const testConnection = async (targetUrl = serverUrl) => {
+    setConnStatus('testing');
+    setConnDetails('Checking backend health...');
+    const result = await apiClient.checkHealth(targetUrl, 3000);
+    if (result.ok) {
+      setConnStatus('connected');
+      setConnDetails(`Connected (${result.latency}ms)`);
+    } else {
+      setConnStatus('error');
+      setConnDetails(result.message || 'Cannot reach backend');
+    }
+  };
+
+  useEffect(() => {
+    // Probe on mount to ensure user is connected or auto-select working host
+    (async () => {
+      setConnStatus('testing');
+      const initial = apiClient.getBaseUrl();
+      const direct = await apiClient.checkHealth(initial, 2000);
+      if (direct.ok) {
+        setConnStatus('connected');
+        setConnDetails(`Connected (${direct.latency}ms)`);
+        return;
+      }
+
+      // Probing candidate hosts
+      const detected = await apiClient.autoDetectWorkingHost();
+      if (detected) {
+        setServerUrl(detected);
+        setConnStatus('connected');
+        setConnDetails('Auto-detected working endpoint');
+      } else {
+        setConnStatus('error');
+        setConnDetails('Server not detected yet');
+      }
+    })();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -29,7 +70,12 @@ export const LoginScreen = ({ navigation }: any) => {
     try {
       await login(email.trim(), password.trim());
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message || 'Please check your credentials');
+      const msg = err.message || 'Please check your credentials';
+      Alert.alert('Login Failed', msg);
+      if (msg.includes('Unable to reach') || msg.includes('timed out')) {
+        setShowConfig(true);
+        testConnection();
+      }
     }
   };
 
@@ -39,14 +85,26 @@ export const LoginScreen = ({ navigation }: any) => {
     try {
       await login(demoEmail, 'Password123!');
     } catch (err: any) {
-      Alert.alert('Login Failed', err.message);
+      const msg = err.message || 'Please check your credentials';
+      Alert.alert('Login Failed', msg);
+      if (msg.includes('Unable to reach') || msg.includes('timed out')) {
+        setShowConfig(true);
+        testConnection();
+      }
     }
   };
 
   const handleSaveConfig = () => {
-    apiClient.setBaseUrl(serverUrl.trim());
-    setShowConfig(false);
-    Alert.alert('Server Configured', `API URL set to ${serverUrl.trim()}`);
+    const trimmed = serverUrl.trim();
+    apiClient.setBaseUrl(trimmed, true);
+    Alert.alert('Server Configured', `API URL set to ${trimmed}`);
+    testConnection(trimmed);
+  };
+
+  const applyPreset = (presetUrl: string) => {
+    setServerUrl(presetUrl);
+    apiClient.setBaseUrl(presetUrl, true);
+    testConnection(presetUrl);
   };
 
   return (
@@ -58,6 +116,25 @@ export const LoginScreen = ({ navigation }: any) => {
           </View>
           <Text style={styles.title}>BloodNet</Text>
           <Text style={styles.subtitle}>Emergency Blood Donation Network</Text>
+
+          {/* Connection status badge */}
+          <View style={styles.statusPill}>
+            {connStatus === 'testing' && <ActivityIndicator size="small" color="#D97706" />}
+            <View
+              style={[
+                styles.statusDot,
+                connStatus === 'connected' && styles.statusDotGreen,
+                connStatus === 'error' && styles.statusDotRed,
+                connStatus === 'testing' && styles.statusDotAmber,
+              ]}
+            />
+            <Text style={styles.statusPillText}>
+              {connStatus === 'connected' && `Backend Online • ${connDetails}`}
+              {connStatus === 'testing' && (connDetails || 'Checking backend...')}
+              {connStatus === 'error' && `Backend Offline • ${connDetails}`}
+              {connStatus === 'idle' && 'Backend Status: Ready'}
+            </Text>
+          </View>
         </View>
 
         <Card variant="outlined" style={styles.formCard}>
@@ -120,7 +197,7 @@ export const LoginScreen = ({ navigation }: any) => {
           </View>
         </Card>
 
-        {/* Server Endpoint Config Toggle (Essential for physical phone testing) */}
+        {/* Server Endpoint Config Toggle */}
         <TouchableOpacity
           style={styles.configToggle}
           onPress={() => setShowConfig(!showConfig)}
@@ -135,18 +212,70 @@ export const LoginScreen = ({ navigation }: any) => {
 
         {showConfig && (
           <Card variant="outlined" style={styles.configCard}>
-            <Text style={styles.configTitle}>Backend API URL</Text>
+            <Text style={styles.configTitle}>Backend API Settings</Text>
             <Text style={styles.configDesc}>
-              Use 'http://10.0.2.2:5000/api' for Android emulator, or your PC's IP (e.g.
-              'http://192.168.1.100:5000/api') for physical phones.
+              Quick Presets (Tap to switch):
             </Text>
+
+            <View style={styles.presetRow}>
+              <TouchableOpacity
+                style={[
+                  styles.presetChip,
+                  serverUrl.includes('localhost:5000') && styles.presetChipActive,
+                ]}
+                onPress={() => applyPreset('http://localhost:5000/api')}
+              >
+                <Text style={styles.presetChipText}>🔌 USB (localhost:5000)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.presetChip,
+                  serverUrl.includes('10.10.187.171') && styles.presetChipActive,
+                ]}
+                onPress={() => applyPreset('http://10.10.187.171:5000/api')}
+              >
+                <Text style={styles.presetChipText}>📶 Wi-Fi (10.10.187.171)</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.presetChip,
+                  serverUrl.includes('10.0.2.2') && styles.presetChipActive,
+                ]}
+                onPress={() => applyPreset('http://10.0.2.2:5000/api')}
+              >
+                <Text style={styles.presetChipText}>💻 Emulator (10.0.2.2)</Text>
+              </TouchableOpacity>
+            </View>
+
             <Input
+              label="Custom API URL"
               value={serverUrl}
               onChangeText={setServerUrl}
               placeholder="http://192.168.x.x:5000/api"
               autoCapitalize="none"
             />
-            <Button title="Save Server URL" onPress={handleSaveConfig} size="sm" />
+
+            <View style={styles.configBtnRow}>
+              <Button
+                title="Test Connection"
+                onPress={() => testConnection(serverUrl.trim())}
+                variant="outline"
+                size="sm"
+                style={{ flex: 1 }}
+              />
+              <Button
+                title="Save & Use"
+                onPress={handleSaveConfig}
+                size="sm"
+                style={{ flex: 1 }}
+              />
+            </View>
+
+            <Text style={styles.hintText}>
+              Note for USB Debugging: Ensure you ran "adb reverse tcp:5000 tcp:5000" in your terminal so your phone routes port 5000 to your PC.
+            </Text>
           </Card>
         )}
       </ScrollView>
@@ -256,7 +385,72 @@ const styles = StyleSheet.create({
   configDesc: {
     fontSize: typography.sizes.xs,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     marginTop: 2,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    marginTop: spacing.sm,
+    gap: 6,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#9CA3AF',
+  },
+  statusDotGreen: {
+    backgroundColor: '#10B981',
+  },
+  statusDotAmber: {
+    backgroundColor: '#F59E0B',
+  },
+  statusDotRed: {
+    backgroundColor: '#EF4444',
+  },
+  statusPillText: {
+    fontSize: typography.sizes.xs,
+    color: colors.textSecondary,
+    fontWeight: '500',
+  },
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+    marginTop: spacing.xs,
+  },
+  presetChip: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  presetChipActive: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#3B82F6',
+  },
+  presetChipText: {
+    fontSize: 11,
+    color: colors.textPrimary,
+    fontWeight: '500',
+  },
+  configBtnRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  hintText: {
+    fontSize: 11,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
+    lineHeight: 16,
   },
 });

@@ -58,15 +58,8 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
 
   const renderHeaderComponent = () => (
     <View style={styles.topSection}>
-      {/* Top Header matching Reference Screen 2 */}
+      {/* Top Header */}
       <View style={styles.screenHeader}>
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.iconCircleBtn}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Icon name="arrow-left" size={18} color="#1F2937" strokeWidth={2} />
-        </TouchableOpacity>
         <Text style={styles.screenCenterTitle}>Instant Services</Text>
         <TouchableOpacity activeOpacity={0.8} style={styles.iconCircleBtn}>
           <Icon name="bell" size={20} color="#1F2937" strokeWidth={1.8} />
@@ -249,8 +242,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   screenCenterTitle: {
-    fontSize: 17,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#111827',
   },
   iconCircleBtn: {

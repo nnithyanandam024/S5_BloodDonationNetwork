@@ -175,10 +175,11 @@ export const CreateRequestScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8F9FE',
   },
   container: {
     padding: spacing.lg,
+    paddingBottom: 40,
   },
   fieldLabel: {
     fontSize: typography.sizes.sm,

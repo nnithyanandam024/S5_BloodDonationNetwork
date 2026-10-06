@@ -134,24 +134,6 @@ export const DonorHomeScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
 
-        {/* Interactive Reference Design Shortcut Pill */}
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('DesignReference')}
-          style={styles.uiReferenceBanner}
-        >
-          <View style={styles.uiReferenceLeft}>
-            <View style={styles.uiReferenceIconBox}>
-              <Icon name="sparkles" size={16} color="#7047EB" strokeWidth={2.2} />
-            </View>
-            <View>
-              <Text style={styles.uiReferenceTitle}>UI Design Reference Mode</Text>
-              <Text style={styles.uiReferenceSub}>Tap to view exact 3-screen interactive recreation</Text>
-            </View>
-          </View>
-          <Icon name="chevron-right" size={16} color="#7047EB" strokeWidth={2.5} />
-        </TouchableOpacity>
-
         {/* Search Bar - Reference Design */}
         <View style={styles.searchBar}>
           <Icon name="search" size={18} color="#9CA3AF" strokeWidth={2} />
@@ -483,42 +465,6 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: '#EF4444',
-  },
-
-  uiReferenceBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F3EFFF',
-    borderWidth: 1,
-    borderColor: '#DDD6FE',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 16,
-  },
-  uiReferenceLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    flex: 1,
-  },
-  uiReferenceIconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  uiReferenceTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#7047EB',
-  },
-  uiReferenceSub: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 1,
   },
 
   searchBar: {
