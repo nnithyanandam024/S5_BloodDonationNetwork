@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
-import { storage } from '../services/storage';
+import { donorRepository } from '../repositories';
 import { findAndRankDonors } from '../services/matching';
 
 export const matchingRouter = Router();
@@ -16,7 +16,7 @@ matchingRouter.post('/search', requireAuth, (req: Request, res: Response): void 
     }
 
     const radius = Number(searchRadiusKm) || 15;
-    const allDonors = storage.getAllDonors();
+    const allDonors = donorRepository.findAllDonors();
 
     const candidates = findAndRankDonors(
       {

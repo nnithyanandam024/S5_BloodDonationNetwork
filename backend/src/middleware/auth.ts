@@ -1,9 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserRole } from '../types';
-import { storage } from '../services/storage';
+import { env } from '../config/env';
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'emergency-blood-donation-s5-secret-key';
+export const JWT_SECRET = env.jwtSecret || process.env.JWT_SECRET || 'emergency-blood-donation-s5-secret-key';
 
 export interface AuthPayload {
   userId: string;

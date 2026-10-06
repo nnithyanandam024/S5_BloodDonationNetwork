@@ -5,6 +5,7 @@ import { authRouter } from './routes/auth';
 import { donorsRouter } from './routes/donors';
 import { requestsRouter } from './routes/requests';
 import { matchingRouter } from './routes/matching';
+import { experimentsRouter } from './routes/experiments';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/donors', donorsRouter);
 app.use('/api/requests', requestsRouter);
 app.use('/api/matching', matchingRouter);
+app.use('/api/experiments', experimentsRouter);
 
 // Global Error Handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

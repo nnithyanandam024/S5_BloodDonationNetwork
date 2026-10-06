@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { storage } from '../services/storage';
+import { donorRepository, requestRepository } from '../repositories';
 import { calculateDonorEligibility } from '../services/eligibility';
 import { validateAndTransition } from '../services/stateMachine';
 import { DonorProfile } from '../types';
+
+import { afgcEngine } from '../services/afgcEngine';
 
 export const donorsRouter = Router();
 
@@ -13,7 +15,7 @@ donorsRouter.get(
   requireAuth,
   requireRole(['DONOR']),
   (req: Request, res: Response): void => {
-    const donor = storage.getUserById(req.user!.userId) as DonorProfile | undefined;
+    const donor = donorRepository.findDonorById(req.user!.userId);
     if (!donor) {
       res.status(404).json({ error: 'Donor profile not found' });
       return;
@@ -35,7 +37,7 @@ donorsRouter.put(
         res.status(400).json({ error: 'isAvailable must be a boolean' });
         return;
       }
-      const updated = storage.updateDonor(req.user!.userId, { isAvailable });
+      const updated = donorRepository.updateDonor(req.user!.userId, { isAvailable });
       const { passwordHash: _, ...safeProfile } = updated;
       res.json({ profile: safeProfile });
     } catch (err: any) {
@@ -50,7 +52,7 @@ donorsRouter.get(
   requireAuth,
   requireRole(['DONOR']),
   (req: Request, res: Response): void => {
-    const donor = storage.getUserById(req.user!.userId) as DonorProfile | undefined;
+    const donor = donorRepository.findDonorById(req.user!.userId);
     if (!donor) {
       res.status(404).json({ error: 'Donor not found' });
       return;
@@ -67,7 +69,7 @@ donorsRouter.get(
   requireRole(['DONOR']),
   (req: Request, res: Response): void => {
     const donorId = req.user!.userId;
-    const requests = storage.getIncomingRequestsForDonor(donorId);
+    const requests = donorRepository.getIncomingRequestsForDonor(donorId);
     res.json({ requests });
   }
 );
@@ -85,13 +87,13 @@ donorsRouter.post(
         return;
       }
 
-      const donor = storage.getUserById(req.user!.userId) as DonorProfile | undefined;
+      const donor = donorRepository.findDonorById(req.user!.userId);
       if (!donor) {
         res.status(404).json({ error: 'Donor profile not found' });
         return;
       }
 
-      const request = storage.getBloodRequestById(requestId);
+      const request = requestRepository.findById(requestId);
       if (!request) {
         res.status(404).json({ error: 'Blood request not found' });
         return;
@@ -107,52 +109,83 @@ donorsRouter.post(
       }
 
       if (action === 'ACCEPT') {
-        // Prevent duplicate acceptance if already accepted by someone else
-        if (request.status === 'ACCEPTED') {
-          res.status(409).json({ error: 'Request has already been accepted by another donor' });
+        // Prevent duplicate acceptance if already committed
+        const alreadyCommitted = (request.donorCommitments || []).some(
+          (c) => c.donorId === donor.id && c.status === 'CONFIRMED'
+        );
+        if (alreadyCommitted) {
+          res.status(409).json({ error: 'You have already confirmed acceptance for this request' });
           return;
         }
 
-        // Validate state machine transition
-        validateAndTransition(request.status, 'ACCEPTED');
+        // Call AFGC Engine closed-loop recalculation
+        afgcEngine.onDonorAccepted(requestId, donor.id);
+        const updated = requestRepository.findById(requestId)!;
 
-        request.status = 'ACCEPTED';
-        request.acceptedDonorId = donor.id;
-        request.acceptedDonorName = donor.name;
-        request.acceptedDonorPhone = donor.phone;
-        request.acceptedAt = new Date().toISOString();
-        request.updatedAt = new Date().toISOString();
-        request.matchedCandidates[candidateIndex].status = 'ACCEPTED';
-        request.matchedCandidates[candidateIndex].respondedAt = new Date().toISOString();
-
-        storage.saveBloodRequest(request);
+        // Maintain ACCEPTED status for client navigation and backward compatibility
+        updated.status = 'ACCEPTED';
+        requestRepository.save(updated);
 
         res.json({
-          message: 'Request accepted successfully. Hospital has been notified.',
-          request,
+          message:
+            updated.remainingGap === 0
+              ? 'Request accepted successfully. Full quota fulfilled! Additional donor dispatch stopped.'
+              : `Request accepted successfully. Gap reduced to ${updated.remainingGap} unit(s).`,
+          request: updated,
         });
       } else {
-        request.matchedCandidates[candidateIndex].status = 'DECLINED';
-        request.matchedCandidates[candidateIndex].respondedAt = new Date().toISOString();
-        request.updatedAt = new Date().toISOString();
+        afgcEngine.onDonorDeclined(requestId, donor.id);
+        const updated = requestRepository.findById(requestId)!;
 
         // Check if all notified donors declined
-        const allDeclined = request.matchedCandidates.every(
-          (c) => c.status === 'DECLINED' || c.status === 'TIMEOUT'
+        const allDeclined = updated.matchedCandidates.every(
+          (c) => c.status === 'DECLINED' || c.status === 'TIMEOUT' || c.status === 'CANCELLED_GAP_FULFILLED'
         );
-        if (allDeclined) {
-          request.status = 'DECLINED';
+        if (allDeclined && (updated.remainingGap || 0) > 0 && (updated.confirmedDonorCount || 0) === 0) {
+          updated.status = 'DECLINED';
+          requestRepository.save(updated);
         }
-
-        storage.saveBloodRequest(request);
 
         res.json({
           message: 'Request declined.',
-          request,
+          request: updated,
         });
       }
     } catch (err: any) {
       res.status(400).json({ error: err.message || 'Failed to respond to request' });
+    }
+  }
+);
+
+// POST /api/donors/cancel - Donor cancels a previously confirmed commitment
+donorsRouter.post(
+  '/cancel',
+  requireAuth,
+  requireRole(['DONOR']),
+  (req: Request, res: Response): void => {
+    try {
+      const { requestId } = req.body;
+      if (!requestId) {
+        res.status(400).json({ error: 'requestId is required' });
+        return;
+      }
+
+      const donor = donorRepository.findDonorById(req.user!.userId);
+      if (!donor) {
+        res.status(404).json({ error: 'Donor profile not found' });
+        return;
+      }
+
+      const telemetry = afgcEngine.onDonorCancelled(requestId, donor.id);
+      const updated = requestRepository.findById(requestId);
+
+      res.json({
+        message: `Commitment cancelled. Requirement gap re-opened to ${telemetry.remainingGap} unit(s). Candidate dispatch re-activated.`,
+        telemetry,
+        request: updated,
+      });
+    } catch (err: any) {
+      res.status(400).json({ error: err.message || 'Failed to cancel commitment' });
     }
   }
 );

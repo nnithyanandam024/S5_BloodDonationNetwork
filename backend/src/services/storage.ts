@@ -85,6 +85,94 @@ export class StorageService {
       lastDonationDate: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(), // Ineligible (must be filtered out!)
     };
 
+    // Seed Demo Donor 4 (Ananya Iyer - O+, 3.1 km)
+    const donor4: DonorProfile = {
+      id: 'donor-ananya-004',
+      name: 'Ananya Iyer',
+      email: 'ananya.iyer@example.com',
+      phone: '+91 98765 43213',
+      role: 'DONOR',
+      passwordHash,
+      createdAt: new Date().toISOString(),
+      bloodGroup: 'O+',
+      dateOfBirth: '1999-03-12',
+      location: {
+        latitude: 12.982,
+        longitude: 77.608,
+        address: 'Koramangala 4th Block',
+        city: 'Bengaluru',
+      },
+      isAvailable: true,
+      donationCount: 3,
+      lastDonationDate: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    // Seed Demo Donor 5 (Karthik Nair - O+, 4.2 km)
+    const donor5: DonorProfile = {
+      id: 'donor-karthik-005',
+      name: 'Karthik Nair',
+      email: 'karthik.nair@example.com',
+      phone: '+91 98765 43214',
+      role: 'DONOR',
+      passwordHash,
+      createdAt: new Date().toISOString(),
+      bloodGroup: 'O+',
+      dateOfBirth: '1997-11-20',
+      location: {
+        latitude: 12.989,
+        longitude: 77.615,
+        address: 'Ulsoor Lake Road',
+        city: 'Bengaluru',
+      },
+      isAvailable: true,
+      donationCount: 5,
+      lastDonationDate: new Date(Date.now() - 140 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    // Seed Demo Donor 6 (Sneha Roy - O-, 2.8 km)
+    const donor6: DonorProfile = {
+      id: 'donor-sneha-006',
+      name: 'Sneha Roy',
+      email: 'sneha.roy@example.com',
+      phone: '+91 98765 43215',
+      role: 'DONOR',
+      passwordHash,
+      createdAt: new Date().toISOString(),
+      bloodGroup: 'O-',
+      dateOfBirth: '2001-07-19',
+      location: {
+        latitude: 12.968,
+        longitude: 77.589,
+        address: 'Richmond Town',
+        city: 'Bengaluru',
+      },
+      isAvailable: true,
+      donationCount: 1,
+      lastDonationDate: new Date(Date.now() - 95 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    // Seed Demo Donor 7 (Arjun Menon - B+, 1.9 km)
+    const donor7: DonorProfile = {
+      id: 'donor-arjun-007',
+      name: 'Arjun Menon',
+      email: 'arjun.menon@example.com',
+      phone: '+91 98765 43216',
+      role: 'DONOR',
+      passwordHash,
+      createdAt: new Date().toISOString(),
+      bloodGroup: 'B+',
+      dateOfBirth: '1996-04-18',
+      location: {
+        latitude: 12.973,
+        longitude: 77.592,
+        address: 'Cubbon Park Road',
+        city: 'Bengaluru',
+      },
+      isAvailable: true,
+      donationCount: 4,
+      lastDonationDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
     // Seed Demo Hospital (City Care Hospital)
     const hospital: HospitalProfile = {
       id: 'hospital-city-001',
@@ -112,6 +200,18 @@ export class StorageService {
 
     this.users.set(donor3.email.toLowerCase(), donor3);
     this.users.set(donor3.id, donor3);
+
+    this.users.set(donor4.email.toLowerCase(), donor4);
+    this.users.set(donor4.id, donor4);
+
+    this.users.set(donor5.email.toLowerCase(), donor5);
+    this.users.set(donor5.id, donor5);
+
+    this.users.set(donor6.email.toLowerCase(), donor6);
+    this.users.set(donor6.id, donor6);
+
+    this.users.set(donor7.email.toLowerCase(), donor7);
+    this.users.set(donor7.id, donor7);
 
     this.users.set(hospital.email.toLowerCase(), hospital);
     this.users.set(hospital.id, hospital);
@@ -168,6 +268,10 @@ export class StorageService {
 
   public getRequestsByHospital(hospitalId: string): BloodRequest[] {
     return this.getAllBloodRequests().filter((r) => r.hospitalId === hospitalId);
+  }
+
+  public clearAllRequests(): void {
+    this.requests.clear();
   }
 
   public getIncomingRequestsForDonor(donorId: string): BloodRequest[] {

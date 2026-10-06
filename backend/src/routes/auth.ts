@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { storage } from '../services/storage';
+import { userRepository } from '../repositories';
 import { requireAuth, JWT_SECRET, AuthPayload } from '../middleware/auth';
 import { DonorProfile, HospitalProfile } from '../types';
 
@@ -18,7 +18,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const existing = storage.getUserByEmail(email);
+    const existing = userRepository.findByEmail(email);
     if (existing) {
       res.status(409).json({ error: 'An account with this email already exists' });
       return;
@@ -63,7 +63,7 @@ authRouter.post('/register', async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    storage.saveUser(newUser);
+    userRepository.save(newUser);
 
     const payload: AuthPayload = { userId: newUser.id, email: newUser.email, role: newUser.role };
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' });
@@ -85,7 +85,7 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const user = storage.getUserByEmail(email);
+    const user = userRepository.findByEmail(email);
     if (!user) {
       res.status(401).json({ error: 'Invalid email or password' });
       return;
@@ -109,7 +109,7 @@ authRouter.post('/login', async (req: Request, res: Response): Promise<void> => 
 
 // GET /api/auth/me
 authRouter.get('/me', requireAuth, (req: Request, res: Response): void => {
-  const user = storage.getUserById(req.user!.userId);
+  const user = userRepository.findById(req.user!.userId);
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
