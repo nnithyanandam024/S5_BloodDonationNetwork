@@ -34,7 +34,7 @@ export const RegisterScreen = ({ navigation }: any) => {
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Missing Fields', 'Please fill in all required fields');
+      Alert.alert('Required Information', 'Please complete all mandatory profile fields');
       return;
     }
 
@@ -59,7 +59,7 @@ export const RegisterScreen = ({ navigation }: any) => {
           role: 'HOSPITAL',
           name: name.trim(),
           hospitalName: hospitalName.trim() || name.trim(),
-          licenseNumber: licenseNumber.trim() || 'LIC-REG',
+          licenseNumber: licenseNumber.trim() || 'LIC-REG-2026',
           email: email.trim(),
           password: password.trim(),
           phone: phone.trim(),
@@ -71,53 +71,55 @@ export const RegisterScreen = ({ navigation }: any) => {
         });
       }
     } catch (err: any) {
-      Alert.alert('Registration Error', err.message || 'Failed to register account');
+      Alert.alert('Registration Failed', err.message || 'Could not create account');
     }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
       <Header title="Create Account" onBack={() => navigation.goBack()} />
-      <ScrollView contentContainerStyle={styles.container}>
-        {/* Role Selector Tabs */}
-        <View style={styles.roleTabs}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Role Switcher Tabs */}
+        <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.roleTab, role === 'DONOR' && styles.roleTabActive]}
+            style={[styles.tabBtn, role === 'DONOR' && styles.tabBtnActive]}
             onPress={() => setRole('DONOR')}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <Icon
-                name="droplet"
-                size={16}
-                color={role === 'DONOR' ? colors.textInverse : colors.primary}
-                strokeWidth={2.2}
-              />
-              <Text style={[styles.roleTabText, role === 'DONOR' && styles.roleTabTextActive]}>
-                Blood Donor
-              </Text>
-            </View>
+            <Icon
+              name="droplet"
+              size={18}
+              color={role === 'DONOR' ? '#DC2626' : colors.textSecondary}
+              strokeWidth={2.2}
+            />
+            <Text style={[styles.tabText, role === 'DONOR' && styles.tabTextActive]}>
+              Volunteer Donor
+            </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={[styles.roleTab, role === 'HOSPITAL' && styles.roleTabActive]}
+            style={[styles.tabBtn, role === 'HOSPITAL' && styles.tabBtnActive]}
             onPress={() => setRole('HOSPITAL')}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <Icon
-                name="hospital"
-                size={16}
-                color={role === 'HOSPITAL' ? colors.textInverse : colors.primary}
-                strokeWidth={2}
-              />
-              <Text style={[styles.roleTabText, role === 'HOSPITAL' && styles.roleTabTextActive]}>
-                Hospital / Clinic
-              </Text>
-            </View>
+            <Icon
+              name="hospital"
+              size={18}
+              color={role === 'HOSPITAL' ? '#DC2626' : colors.textSecondary}
+              strokeWidth={2}
+            />
+            <Text style={[styles.tabText, role === 'HOSPITAL' && styles.tabTextActive]}>
+              Hospital Facility
+            </Text>
           </TouchableOpacity>
         </View>
 
-        <Card variant="outlined">
+        {/* Profile Card */}
+        <Card variant="outlined" style={styles.formCard}>
+          <Text style={styles.sectionTitle}>
+            {role === 'DONOR' ? 'Personal & Medical Information' : 'Institutional Credentials'}
+          </Text>
+
           <Input
-            label={role === 'DONOR' ? 'Full Name' : 'Authorized Representative Name'}
+            label={role === 'DONOR' ? 'Full Name' : 'Authorized Officer Name'}
             placeholder={role === 'DONOR' ? 'e.g. John Doe' : 'e.g. Dr. Ramesh Rao'}
             value={name}
             onChangeText={setName}
@@ -126,14 +128,14 @@ export const RegisterScreen = ({ navigation }: any) => {
           {role === 'HOSPITAL' && (
             <>
               <Input
-                label="Hospital / Medical Center Name"
+                label="Hospital / Medical Facility Name"
                 placeholder="e.g. City Care Super Specialty Hospital"
                 value={hospitalName}
                 onChangeText={setHospitalName}
               />
               <Input
-                label="License / Registration ID"
-                placeholder="e.g. HOSP-BLR-2026"
+                label="License / Clinical Registration ID"
+                placeholder="e.g. HOSP-BLR-2026-90"
                 value={licenseNumber}
                 onChangeText={setLicenseNumber}
               />
@@ -150,7 +152,7 @@ export const RegisterScreen = ({ navigation }: any) => {
           />
 
           <Input
-            label="Phone Number"
+            label="Emergency Contact Phone"
             placeholder="+91 98765 43210"
             value={phone}
             onChangeText={setPhone}
@@ -166,7 +168,7 @@ export const RegisterScreen = ({ navigation }: any) => {
           />
 
           <Input
-            label="City / Location"
+            label="City / Jurisdiction"
             placeholder="e.g. Bengaluru"
             value={city}
             onChangeText={setCity}
@@ -190,11 +192,18 @@ export const RegisterScreen = ({ navigation }: any) => {
           )}
 
           <Button
-            title={role === 'DONOR' ? 'Register as Donor' : 'Register Hospital'}
+            title={role === 'DONOR' ? 'Register as Voluntary Donor' : 'Register Medical Facility'}
             onPress={handleRegister}
             loading={isLoading}
             style={styles.submitBtn}
           />
+
+          <View style={styles.footerPrompt}>
+            <Text style={styles.promptText}>Already registered? </Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.linkText}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
         </Card>
       </ScrollView>
     </SafeAreaView>
@@ -204,42 +213,78 @@ export const RegisterScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
   },
   container: {
     padding: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
-  roleTabs: {
+  tabContainer: {
     flexDirection: 'row',
-    backgroundColor: colors.secondaryLight,
-    borderRadius: borderRadius.md,
-    padding: spacing.xs,
-    marginBottom: spacing.lg,
+    backgroundColor: '#E2E8F0',
+    borderRadius: borderRadius.lg,
+    padding: 3,
+    marginBottom: spacing.md,
   },
-  roleTab: {
+  tabBtn: {
     flex: 1,
-    paddingVertical: spacing.sm + 2,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: borderRadius.sm,
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    gap: 6,
   },
-  roleTabActive: {
-    backgroundColor: colors.surface,
+  tabBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
-  roleTabText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.medium,
+  tabText: {
+    ...typography.bodySmall,
     color: colors.textSecondary,
+    fontWeight: '600',
   },
-  roleTabTextActive: {
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
+  tabTextActive: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  formCard: {
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: spacing.md,
   },
   submitBtn: {
     marginTop: spacing.md,
+    backgroundColor: '#DC2626',
+  },
+  footerPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  promptText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+  linkText: {
+    ...typography.bodySmall,
+    color: '#DC2626',
+    fontWeight: '700',
   },
 });

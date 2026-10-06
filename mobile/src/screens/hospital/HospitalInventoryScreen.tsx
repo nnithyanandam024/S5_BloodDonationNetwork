@@ -86,7 +86,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
       <View style={styles.screenHeader}>
         <View>
           <Text style={styles.screenCenterTitle}>Authorized Blood Reserves</Text>
-          <Text style={styles.screenSubtitle}>AFGC Dual-Source Network</Text>
+          <Text style={styles.screenSubtitle}>Regional Blood Bank Network</Text>
         </View>
         <TouchableOpacity
           activeOpacity={0.8}
@@ -127,7 +127,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
             </View>
             <View style={styles.livePulseBadge}>
               <View style={styles.pulseDot} />
-              <Text style={styles.pulseText}>LIVE AFGC</Text>
+              <Text style={styles.pulseText}>LIVE SYNC</Text>
             </View>
           </View>
         }
@@ -165,7 +165,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
               <Text style={styles.unitsLabel}>Available Units</Text>
 
               {item.reservedUnits > 0 ? (
-                <Text style={styles.reservedNote}>({item.reservedUnits} Reserved AFGC)</Text>
+                <Text style={styles.reservedNote}>({item.reservedUnits} Reserved)</Text>
               ) : null}
 
               <View
@@ -197,7 +197,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
         ListFooterComponent={
           <View style={styles.footer}>
             <Button
-              title="+ Create AFGC Emergency Request"
+              title="+ Create Emergency Requisition"
               onPress={() => navigation.navigate('CreateRequest')}
               style={styles.transferBtn}
             />

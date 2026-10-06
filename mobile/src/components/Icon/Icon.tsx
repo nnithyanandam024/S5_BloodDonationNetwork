@@ -47,6 +47,8 @@ export type IconName =
   | 'gear'
   | 'logout'
   | 'chevron-right'
+  | 'chevron-up'
+  | 'chevron-down'
   | 'clock'
   | 'megaphone';
 
@@ -365,6 +367,20 @@ export const Icon: React.FC<IconProps> = ({
         return (
           <G stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">
             <Polyline points="9 18 15 12 9 6" />
+          </G>
+        );
+
+      case 'chevron-up':
+        return (
+          <G stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="18 15 12 9 6 15" />
+          </G>
+        );
+
+      case 'chevron-down':
+        return (
+          <G stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <Polyline points="6 9 12 15 18 9" />
           </G>
         );
 

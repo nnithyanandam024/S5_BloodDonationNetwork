@@ -89,7 +89,7 @@ export const DonorProfileScreen = ({ navigation }: any) => {
                 <Circle cx="10" cy="10" r="8" stroke="#9CA3AF" strokeWidth="1.5" fill="none" opacity={0.6} />
                 <Circle cx="24" cy="10" r="8" stroke="#9CA3AF" strokeWidth="1.5" fill="none" opacity={0.6} />
               </Svg>
-              <Text style={styles.ringsText}>Tier 1 (Active)</Text>
+              <Text style={styles.ringsText}>Verified (Active)</Text>
             </View>
             <View style={styles.personPhotoMock}>
               <Icon name="user" size={44} color="#7047EB" strokeWidth={1.6} />

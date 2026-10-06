@@ -7,10 +7,11 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  Modal as RNModal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Card, StatusBadge, Button, EmptyState, LoadingState, Icon } from '../../components';
+import { Card, StatusBadge, Button, EmptyState, LoadingState, Icon, FastTrackBadge } from '../../components';
 import { donorsApi } from '../../services/api';
 import { BloodRequest } from '../../types';
 import { useAuth } from '../../store/AuthContext';
@@ -21,6 +22,7 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [activePassRequest, setActivePassRequest] = useState<BloodRequest | null>(null);
 
   const fetchRequests = useCallback(async () => {
     try {
@@ -45,7 +47,7 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
     try {
       const res = await donorsApi.respondToRequest(requestId, action);
       Alert.alert(
-        action === 'ACCEPT' ? 'Request Accepted' : 'Request Declined',
+        action === 'ACCEPT' ? 'Request Confirmed' : 'Request Declined',
         res.message
       );
       fetchRequests();
@@ -58,126 +60,97 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
 
   const renderHeaderComponent = () => (
     <View style={styles.topSection}>
-      {/* Top Header */}
       <View style={styles.screenHeader}>
-        <Text style={styles.screenCenterTitle}>Instant Services</Text>
-        <TouchableOpacity activeOpacity={0.8} style={styles.iconCircleBtn}>
-          <Icon name="bell" size={20} color="#1F2937" strokeWidth={1.8} />
-          {requests.length > 0 && <View style={styles.redDotBadge} />}
-        </TouchableOpacity>
+        <View>
+          <Text style={styles.screenTitle}>Urgent Requisitions</Text>
+          <Text style={styles.screenSubtitle}>Nearby verified hospital emergencies</Text>
+        </View>
+        <View style={styles.activePill}>
+          <View style={styles.pulseDot} />
+          <Text style={styles.activePillText}>{requests.length} Available</Text>
+        </View>
       </View>
 
-      {/* Live Well & Yield Rewards Cards Row */}
-      <Text style={styles.sectionHeaderTitle}>Live Network & Yield Impact</Text>
-      <View style={styles.rewardsRow}>
-        {/* Left Card: Medical Advisors */}
-        <View style={styles.agentsCard}>
-          <View style={styles.starBadgeRow}>
-            <View style={styles.starIconBox}>
-              <Icon name="star" size={14} color="#F59E0B" strokeWidth={2} />
-            </View>
-            <Text style={styles.agentsCardTitle}>Medical Advisors</Text>
-          </View>
-          <Text style={styles.agentsCardSubtitle}>
-            Connect with verified hospital hematologists & donation coordinators
+      {/* Emergency Assurance Banner */}
+      <View style={styles.assuranceBanner}>
+        <View style={styles.shieldIcon}>
+          <Icon name="shield" size={18} color="#0D9488" strokeWidth={2.2} />
+        </View>
+        <View style={styles.assuranceTextContainer}>
+          <Text style={styles.assuranceTitle}>Private & Verified Dispatch</Text>
+          <Text style={styles.assuranceDesc}>
+            Your exact residential coordinates are never shared. Verified intake pass issued upon response.
           </Text>
-
-          {/* Overlapping circular avatars */}
-          <View style={styles.avatarStackRow}>
-            <View style={[styles.stackAvatar, { backgroundColor: '#FDE68A', zIndex: 4 }]}>
-              <Text style={styles.stackAvatarText}>D</Text>
-            </View>
-            <View style={[styles.stackAvatar, { backgroundColor: '#FED7AA', zIndex: 3, marginLeft: -12 }]}>
-              <Text style={styles.stackAvatarText}>R</Text>
-            </View>
-            <View style={[styles.stackAvatar, { backgroundColor: '#DDD6FE', zIndex: 2, marginLeft: -12 }]}>
-              <Text style={styles.stackAvatarText}>S</Text>
-            </View>
-            <View style={[styles.stackAvatarBadge, { zIndex: 1, marginLeft: -12 }]}>
-              <Text style={styles.stackAvatarBadgeText}>+20</Text>
-            </View>
-          </View>
         </View>
-
-        {/* Right Card: Chat with expert */}
-        <View style={styles.expertCard}>
-          <View style={styles.expertChatIconBox}>
-            <Icon name="chat" size={20} color="#FFFFFF" strokeWidth={2} />
-          </View>
-          <Text style={styles.expertCardTitle}>Emergency</Text>
-          <Text style={styles.expertCardTitle}>Hotline</Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
-            style={styles.messageNowBtn}
-            onPress={() => Alert.alert('Emergency Support', 'Connecting to 24/7 Blood Coordination Desk...')}
-          >
-            <Text style={styles.messageNowText}>Connect Now</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Quick Actions Header */}
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Urgent Requests</Text>
-        <Text style={styles.requestsCountBadge}>{requests.length} Active</Text>
       </View>
     </View>
   );
 
   const renderRequestCard = ({ item }: { item: BloodRequest }) => {
-    const myCandidateInfo = item.matchedCandidates.find((c) => c.donorId === user?.id);
-    const distanceKm = myCandidateInfo ? myCandidateInfo.distanceKm : 1.2;
+    const myCandidateInfo = item.matchedCandidates?.find((c) => c.donorId === user?.id);
+    const distanceKm = myCandidateInfo?.distanceKm ? myCandidateInfo.distanceKm.toFixed(1) : '2.1';
+    const isAccepted = myCandidateInfo?.status === 'ACCEPTED' || (item.donorCommitments || []).some(c => c.donorId === user?.id && c.status === 'CONFIRMED');
+    const isClosed = myCandidateInfo?.status === 'CANCELLED_GAP_FULFILLED' || item.remainingGap === 0;
 
     return (
       <View style={styles.requestCard}>
-        {/* Card Header */}
+        {/* Card Top: Hospital & Urgency */}
         <View style={styles.cardHeader}>
-          <View style={styles.hospitalInfo}>
+          <View style={styles.hospitalMeta}>
             <Text style={styles.hospitalName}>{item.hospitalName}</Text>
             <View style={styles.locationRow}>
-              <Icon name="location-pin" size={13} color="#6B7280" strokeWidth={2} />
+              <Icon name="location-pin" size={13} color="#64748B" strokeWidth={2} />
               <Text style={styles.hospitalLocation}>
-                {item.location?.city || 'Emergency Care Center'} • {distanceKm} km away
+                {item.location?.city || 'Medical Center'} • {distanceKm} km away
               </Text>
             </View>
           </View>
           <StatusBadge value={item.urgency} />
         </View>
 
-        {/* Ephemeral Privacy Credential Banner */}
-        <View style={styles.ephemeralBadgeBox}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icon name="shield" size={13} color="#7047EB" strokeWidth={2.2} />
-            <Text style={styles.ephemeralBadgeTitle}>Privacy-Preserving Ephemeral Credential</Text>
-          </View>
-          <Text style={styles.ephemeralTokenText}>
-            Token: {myCandidateInfo?.ephemeralToken ? myCandidateInfo.ephemeralToken.slice(0, 12) + '...' : 'HMAC-Active'} • Band &lt;5km • Zero Stored GPS
-          </Text>
-        </View>
-
-        {/* Blood Details */}
+        {/* Blood Component Need Row */}
         <View style={styles.bloodInfoRow}>
           <View style={styles.bloodGroupBadge}>
             <Text style={styles.bloodGroupText}>{item.bloodGroup}</Text>
           </View>
           <View style={styles.unitsInfo}>
             <Text style={styles.unitsCount}>
-              {item.remainingGap !== undefined ? `${item.remainingGap} Units Remaining Gap` : `${item.unitsRequired} Units Required`}
+              {item.remainingGap !== undefined ? `${item.remainingGap} Units Still Needed` : `${item.unitsRequired} Units Required`}
             </Text>
-            <Text style={styles.componentType}>{item.component.replace('_', ' ')} • Dual-Source AFGC</Text>
+            <Text style={styles.componentType}>
+              {item.component ? item.component.replace('_', ' ') : 'Whole Blood'}
+            </Text>
           </View>
+
+          {/* Quick Intake Pass Button if accepted */}
+          {isAccepted && (
+            <TouchableOpacity
+              style={styles.viewPassBtn}
+              onPress={() => setActivePassRequest(item)}
+            >
+              <Icon name="shield" size={14} color="#0D9488" strokeWidth={2} />
+              <Text style={styles.viewPassText}>Intake Pass</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {item.notes ? (
           <Text style={styles.notesText}>Note: "{item.notes}"</Text>
         ) : null}
 
-        {/* Action Buttons or Auto-Terminated Notice */}
-        {myCandidateInfo?.status === 'CANCELLED_GAP_FULFILLED' || item.remainingGap === 0 ? (
+        {/* State Banners or Action Buttons */}
+        {isClosed && !isAccepted ? (
           <View style={styles.fulfilledTerminationBox}>
-            <Icon name="check" size={14} color="#059669" />
+            <Icon name="check" size={16} color="#059669" strokeWidth={2.2} />
             <Text style={styles.fulfilledTerminationText}>
-              Emergency Quota Fulfilled by Dual-Source Reserve — Invitation closed by AFGC.
+              Requirement Met — Another volunteer or reserve checked in first. Thank you for your readiness!
+            </Text>
+          </View>
+        ) : isAccepted ? (
+          <View style={styles.acceptedConfirmationBox}>
+            <Icon name="check" size={16} color="#0D9488" strokeWidth={2.4} />
+            <Text style={styles.acceptedConfirmationText}>
+              You are confirmed for this emergency. Please proceed to intake.
             </Text>
           </View>
         ) : (
@@ -198,9 +171,9 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
               style={styles.acceptBtn}
             >
               <Text style={styles.acceptBtnText}>
-                {actionLoadingId === item.id ? 'Processing...' : 'Accept Request'}
+                {actionLoadingId === item.id ? 'Confirming...' : 'Accept Emergency'}
               </Text>
-              <Icon name="arrow-right" size={14} color="#FFFFFF" strokeWidth={2.5} />
+              <Icon name="arrow-right" size={14} color="#FFFFFF" strokeWidth={2.4} />
             </TouchableOpacity>
           </View>
         )}
@@ -218,26 +191,50 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
           keyExtractor={(item) => item.id}
           ListHeaderComponent={renderHeaderComponent}
           renderItem={renderRequestCard}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={fetchRequests} colors={['#DC2626']} />
+          }
           ListEmptyComponent={
             <EmptyState
-              title="No Pending Emergency Requests"
-              description="You will be notified immediately when a nearby hospital requires your blood group."
-              actionTitle="Check Again"
-              onAction={fetchRequests}
-            />
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={() => {
-                setRefreshing(true);
-                fetchRequests();
-              }}
+              title="No Urgent Requisitions"
+              description="There are currently no active emergency blood requisitions in your vicinity."
             />
           }
         />
       )}
+
+      {/* Fast-Track Digital Pass Modal */}
+      <RNModal
+        visible={!!activePassRequest}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActivePassRequest(null)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setActivePassRequest(null)}
+        >
+          <View style={styles.modalCardWrap}>
+            {activePassRequest && (
+              <FastTrackBadge
+                donorName={user?.name || 'Verified Donor'}
+                bloodGroup={activePassRequest.bloodGroup}
+                requestId={activePassRequest.id}
+                hospitalName={activePassRequest.hospitalName}
+              />
+            )}
+            <TouchableOpacity
+              style={styles.closePassBtn}
+              onPress={() => setActivePassRequest(null)}
+            >
+              <Text style={styles.closePassText}>Close Pass</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </RNModal>
     </SafeAreaView>
   );
 };
@@ -245,202 +242,94 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#F8F9FE',
+    backgroundColor: '#F8FAFC',
   },
-  list: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 100,
+  listContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   topSection: {
-    marginBottom: 8,
+    marginBottom: spacing.md,
   },
   screenHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: spacing.md,
   },
-  screenCenterTitle: {
-    fontSize: 20,
+  screenTitle: {
+    ...typography.h2,
+    color: '#0F172A',
     fontWeight: '800',
-    color: '#111827',
   },
-  iconCircleBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
+  screenSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  activePill: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 1,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    gap: 6,
   },
-  redDotBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 12,
+  pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#EF4444',
+    backgroundColor: '#2563EB',
   },
-
-  sectionHeaderTitle: {
-    fontSize: 17,
+  activePillText: {
+    ...typography.caption,
+    color: '#1D4ED8',
     fontWeight: '700',
-    color: '#111827',
-    marginBottom: 14,
   },
-  rewardsRow: {
+  assuranceBanner: {
     flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  agentsCard: {
-    flex: 1.4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
+    backgroundColor: '#F0FDFA',
     borderWidth: 1,
-    borderColor: '#EEF0F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
-  },
-  starBadgeRow: {
-    flexDirection: 'row',
+    borderColor: '#CCFBF1',
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 8,
+    gap: spacing.sm,
   },
-  starIconBox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#FEF3C7',
+  shieldIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#CCFBF1',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  agentsCardTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  agentsCardSubtitle: {
-    fontSize: 11,
-    color: '#6B7280',
-    lineHeight: 16,
-    marginBottom: 12,
-  },
-  avatarStackRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  stackAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stackAvatarText: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: '#4B5563',
-  },
-  stackAvatarBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#111827',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stackAvatarBadgeText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  expertCard: {
+  assuranceTextContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#EEF0F6',
-    alignItems: 'flex-start',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 6,
-    elevation: 1,
   },
-  expertChatIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: '#7047EB',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  expertCardTitle: {
-    fontSize: 13,
+  assuranceTitle: {
+    ...typography.caption,
     fontWeight: '700',
-    color: '#111827',
-    lineHeight: 18,
+    color: '#0F766E',
   },
-  messageNowBtn: {
-    marginTop: 10,
+  assuranceDesc: {
+    fontSize: 11,
+    color: '#115E59',
+    marginTop: 1,
+    lineHeight: 15,
   },
-  messageNowText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#7047EB',
-  },
-
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  requestsCountBadge: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#7047EB',
-    backgroundColor: '#F3EFFF',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-
   requestCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
+    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: '#EEF0F6',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    borderColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.04,
     shadowRadius: 8,
     elevation: 2,
@@ -449,145 +338,176 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginBottom: spacing.md,
   },
-  hospitalInfo: {
+  hospitalMeta: {
     flex: 1,
-    marginRight: 10,
+    marginRight: spacing.sm,
   },
   hospitalName: {
-    fontSize: 15,
+    ...typography.h3,
+    color: '#0F172A',
     fontWeight: '700',
-    color: '#111827',
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
     marginTop: 4,
+    gap: 4,
   },
   hospitalLocation: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  cardDivider: {
-    height: 1,
-    backgroundColor: '#F3F4F6',
-    marginVertical: 14,
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   bloodInfoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    marginBottom: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: borderRadius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   bloodGroupBadge: {
-    backgroundColor: '#7047EB',
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#DC2626',
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: spacing.sm,
   },
   bloodGroupText: {
     color: '#FFFFFF',
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: '800',
   },
   unitsInfo: {
     flex: 1,
   },
   unitsCount: {
-    fontSize: 14,
+    ...typography.bodySmall,
     fontWeight: '700',
-    color: '#111827',
+    color: '#0F172A',
   },
   componentType: {
-    fontSize: 12,
-    color: '#6B7280',
-    textTransform: 'capitalize',
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
-  notesText: {
-    fontSize: 12,
-    color: '#4B5563',
-    fontStyle: 'italic',
-    backgroundColor: '#F9FAFB',
-    padding: 10,
-    borderRadius: 10,
-    marginBottom: 14,
-  },
-  actionsRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  declineBtn: {
-    flex: 1,
-    paddingVertical: 11,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: '#D1D5DB',
-    backgroundColor: '#FFFFFF',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  declineBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#4B5563',
-  },
-  acceptBtn: {
-    flex: 1.4,
+  viewPassBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    paddingVertical: 11,
-    borderRadius: 22,
-    backgroundColor: '#7047EB',
-    shadowColor: '#7047EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 3,
+    gap: 4,
+    backgroundColor: '#CCFBF1',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: borderRadius.full,
   },
-  acceptBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  ephemeralBadgeBox: {
-    backgroundColor: '#F3E8FF',
-    borderRadius: 8,
-    padding: 8,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#DDD6FE',
-  },
-  ephemeralBadgeTitle: {
+  viewPassText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#0F766E',
   },
-  ephemeralTokenText: {
-    fontSize: 10,
-    color: '#6B7280',
-    fontFamily: 'monospace',
-    marginTop: 2,
+  notesText: {
+    ...typography.caption,
+    fontStyle: 'italic',
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
   },
   fulfilledTerminationBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     backgroundColor: '#ECFDF5',
-    padding: 10,
-    borderRadius: 10,
-    borderWidth: 1,
     borderColor: '#A7F3D0',
-    marginTop: 6,
+    borderWidth: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   fulfilledTerminationText: {
-    fontSize: 11,
-    fontWeight: '700',
+    ...typography.caption,
     color: '#065F46',
     flex: 1,
+    fontWeight: '600',
+  },
+  acceptedConfirmationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDFA',
+    borderColor: '#99F6E4',
+    borderWidth: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  acceptedConfirmationText: {
+    ...typography.caption,
+    color: '#0F766E',
+    flex: 1,
+    fontWeight: '600',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  declineBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  declineBtnText: {
+    ...typography.bodySmall,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  acceptBtn: {
+    flex: 2,
+    flexDirection: 'row',
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    backgroundColor: '#DC2626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  acceptBtnText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.lg,
+  },
+  modalCardWrap: {
+    width: '100%',
+    maxWidth: 360,
+    alignItems: 'center',
+  },
+  closePassBtn: {
+    marginTop: spacing.md,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 10,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  closePassText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: colors.textPrimary,
   },
 });
+

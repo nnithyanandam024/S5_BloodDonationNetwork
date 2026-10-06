@@ -55,16 +55,16 @@ export const CreateRequestScreen = ({ navigation }: any) => {
         autoReserveInventory,
       });
 
-      Alert.alert('AFGC Cycle Activated', res.message, [
+      Alert.alert('Emergency Requisition Created', res.message, [
         {
-          text: 'Track AFGC Telemetry',
+          text: 'Track Progress',
           onPress: () => {
             navigation.navigate('RequestDetails', { requestId: res.request.id });
           },
         },
       ]);
     } catch (err: any) {
-      Alert.alert('Creation Failed', err.message || 'Could not initiate AFGC cycle');
+      Alert.alert('Creation Failed', err.message || 'Could not initiate emergency requisition');
     } finally {
       setLoading(false);
     }
@@ -161,10 +161,10 @@ export const CreateRequestScreen = ({ navigation }: any) => {
             placeholder="e.g. ICU Bed 4, Emergency OT required immediately"
           />
 
-          {/* AFGC Dual-Source Information Card */}
+          {/* Smart Inventory Coordination Banner */}
           <View style={styles.afgcInfoBox}>
             <View style={styles.afgcInfoTop}>
-              <Text style={styles.afgcInfoTitle}>AFGC DUAL-SOURCE COORDINATION</Text>
+              <Text style={styles.afgcInfoTitle}>SMART INVENTORY COORDINATION</Text>
               <TouchableOpacity
                 activeOpacity={0.8}
                 onPress={() => setAutoReserveInventory(!autoReserveInventory)}
@@ -184,12 +184,12 @@ export const CreateRequestScreen = ({ navigation }: any) => {
               </TouchableOpacity>
             </View>
             <Text style={styles.afgcInfoDesc}>
-              Interrogates authorized blood bank inventory reserves first (IR), securing compatible units and dispatching volunteer donors only for the unresolved gap G = Q − IR − DC.
+              Automatically searches and locks compatible blood bank inventory reserves first. Volunteer donors are mobilized only for remaining unfulfilled units.
             </Text>
           </View>
 
           <Button
-            title="Launch AFGC Fulfillment Cycle"
+            title="Broadcast Emergency Requisition"
             onPress={handleCreate}
             loading={loading}
             variant="danger"

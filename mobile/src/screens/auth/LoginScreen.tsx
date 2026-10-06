@@ -16,8 +16,9 @@ import { apiClient } from '../../services/api';
 
 export const LoginScreen = ({ navigation }: any) => {
   const { login, isLoading } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'HOSPITAL' | 'DONOR'>('HOSPITAL');
+  const [email, setEmail] = useState('hospital@citycare.org');
+  const [password, setPassword] = useState('Password123!');
   const [showConfig, setShowConfig] = useState(false);
   const [serverUrl, setServerUrl] = useState(apiClient.getBaseUrl());
   const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
@@ -25,41 +26,51 @@ export const LoginScreen = ({ navigation }: any) => {
 
   const testConnection = async (targetUrl = serverUrl) => {
     setConnStatus('testing');
-    setConnDetails('Checking backend health...');
+    setConnDetails('Verifying network status...');
     const result = await apiClient.checkHealth(targetUrl, 3000);
     if (result.ok) {
       setConnStatus('connected');
-      setConnDetails(`Connected (${result.latency}ms)`);
+      setConnDetails(`Active (${result.latency}ms)`);
     } else {
       setConnStatus('error');
-      setConnDetails(result.message || 'Cannot reach backend');
+      setConnDetails(result.message || 'Offline');
     }
   };
 
   useEffect(() => {
-    // Probe on mount to ensure user is connected or auto-select working host
+    // Probe on mount to verify backend connectivity
     (async () => {
       setConnStatus('testing');
       const initial = apiClient.getBaseUrl();
       const direct = await apiClient.checkHealth(initial, 2000);
       if (direct.ok) {
         setConnStatus('connected');
-        setConnDetails(`Connected (${direct.latency}ms)`);
+        setConnDetails(`Active (${direct.latency}ms)`);
         return;
       }
 
-      // Probing candidate hosts
       const detected = await apiClient.autoDetectWorkingHost();
       if (detected) {
         setServerUrl(detected);
         setConnStatus('connected');
-        setConnDetails('Auto-detected working endpoint');
+        setConnDetails('Auto-connected');
       } else {
         setConnStatus('error');
-        setConnDetails('Server not detected yet');
+        setConnDetails('Network unavailable');
       }
     })();
   }, []);
+
+  const handleRoleSelect = (role: 'HOSPITAL' | 'DONOR') => {
+    setSelectedRole(role);
+    if (role === 'HOSPITAL') {
+      setEmail('hospital@citycare.org');
+      setPassword('Password123!');
+    } else {
+      setEmail('john.doe@example.com');
+      setPassword('Password123!');
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -71,34 +82,12 @@ export const LoginScreen = ({ navigation }: any) => {
       await login(email.trim(), password.trim());
     } catch (err: any) {
       const msg = err.message || 'Please check your credentials';
-      Alert.alert('Login Failed', msg);
+      Alert.alert('Sign In Failed', msg);
       if (msg.includes('Unable to reach') || msg.includes('timed out')) {
         setShowConfig(true);
         testConnection();
       }
     }
-  };
-
-  const handleQuickLogin = async (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('Password123!');
-    try {
-      await login(demoEmail, 'Password123!');
-    } catch (err: any) {
-      const msg = err.message || 'Please check your credentials';
-      Alert.alert('Login Failed', msg);
-      if (msg.includes('Unable to reach') || msg.includes('timed out')) {
-        setShowConfig(true);
-        testConnection();
-      }
-    }
-  };
-
-  const handleSaveConfig = () => {
-    const trimmed = serverUrl.trim();
-    apiClient.setBaseUrl(trimmed, true);
-    Alert.alert('Server Configured', `API URL set to ${trimmed}`);
-    testConnection(trimmed);
   };
 
   const applyPreset = (presetUrl: string) => {
@@ -109,15 +98,16 @@ export const LoginScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+        {/* Brand Header */}
         <View style={styles.header}>
           <View style={styles.logoBadge}>
-            <Icon name="droplet" size={32} color="#DC2626" strokeWidth={2.2} />
+            <Icon name="droplet" size={32} color="#DC2626" strokeWidth={2.4} />
           </View>
-          <Text style={styles.title}>BloodNet</Text>
-          <Text style={styles.subtitle}>Emergency Blood Donation Network</Text>
+          <Text style={styles.title}>BloodLink</Text>
+          <Text style={styles.subtitle}>Emergency Blood Fulfillment Network</Text>
 
-          {/* Connection status badge */}
+          {/* Connection Status Pill */}
           <View style={styles.statusPill}>
             {connStatus === 'testing' && <ActivityIndicator size="small" color="#D97706" />}
             <View
@@ -129,16 +119,62 @@ export const LoginScreen = ({ navigation }: any) => {
               ]}
             />
             <Text style={styles.statusPillText}>
-              {connStatus === 'connected' && `Backend Online • ${connDetails}`}
-              {connStatus === 'testing' && (connDetails || 'Checking backend...')}
-              {connStatus === 'error' && `Backend Offline • ${connDetails}`}
-              {connStatus === 'idle' && 'Backend Status: Ready'}
+              {connStatus === 'connected' && `Network Ready • ${connDetails}`}
+              {connStatus === 'testing' && (connDetails || 'Checking network...')}
+              {connStatus === 'error' && `Offline • ${connDetails}`}
+              {connStatus === 'idle' && 'Network Ready'}
             </Text>
           </View>
         </View>
 
+        {/* Portal Selector Tabs */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tabBtn, selectedRole === 'HOSPITAL' && styles.tabBtnActive]}
+            onPress={() => handleRoleSelect('HOSPITAL')}
+          >
+            <Icon
+              name="hospital"
+              size={18}
+              color={selectedRole === 'HOSPITAL' ? '#DC2626' : colors.textSecondary}
+              strokeWidth={2}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                selectedRole === 'HOSPITAL' && styles.tabTextActive,
+              ]}
+            >
+              Hospital Portal
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tabBtn, selectedRole === 'DONOR' && styles.tabBtnActive]}
+            onPress={() => handleRoleSelect('DONOR')}
+          >
+            <Icon
+              name="user"
+              size={18}
+              color={selectedRole === 'DONOR' ? '#DC2626' : colors.textSecondary}
+              strokeWidth={2}
+            />
+            <Text
+              style={[
+                styles.tabText,
+                selectedRole === 'DONOR' && styles.tabTextActive,
+              ]}
+            >
+              Donor Portal
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Main Sign In Card */}
         <Card variant="outlined" style={styles.formCard}>
-          <Text style={styles.formTitle}>Sign In</Text>
+          <Text style={styles.formTitle}>
+            {selectedRole === 'HOSPITAL' ? 'Hospital Staff Sign In' : 'Donor Member Sign In'}
+          </Text>
 
           <Input
             label="Email Address"
@@ -165,58 +201,55 @@ export const LoginScreen = ({ navigation }: any) => {
           />
 
           <View style={styles.registerPrompt}>
-            <Text style={styles.promptText}>Don't have an account? </Text>
+            <Text style={styles.promptText}>New facility or donor? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.linkText}>Register</Text>
+              <Text style={styles.linkText}>Create Account</Text>
             </TouchableOpacity>
           </View>
         </Card>
 
-        {/* Quick Demo Logins for Instant Testing */}
-        <Card variant="flat" style={styles.demoCard}>
-          <Text style={styles.demoTitle}>Quick Demo Logins (1-Tap)</Text>
-          <Text style={styles.demoSub}>
-            Instant login for quick testing without typing credentials:
-          </Text>
+        {/* Quick Demo Accounts Pill Chips */}
+        <View style={styles.quickAccountsSection}>
+          <Text style={styles.quickTitle}>Quick Demo Switcher (1-Tap):</Text>
+          <View style={styles.quickChipsRow}>
+            <TouchableOpacity
+              style={[
+                styles.quickChip,
+                selectedRole === 'HOSPITAL' && styles.quickChipActive,
+              ]}
+              onPress={() => handleRoleSelect('HOSPITAL')}
+            >
+              <Text style={styles.quickChipText}>🏥 City Care Hospital</Text>
+            </TouchableOpacity>
 
-          <View style={styles.demoButtons}>
-            <Button
-              title="Demo Donor (O+ John)"
-              onPress={() => handleQuickLogin('john.doe@example.com')}
-              variant="secondary"
-              size="sm"
-              style={styles.demoBtn}
-            />
-            <Button
-              title="Demo Hospital (City Care)"
-              onPress={() => handleQuickLogin('hospital@citycare.org')}
-              variant="outline"
-              size="sm"
-              style={styles.demoBtn}
-            />
+            <TouchableOpacity
+              style={[
+                styles.quickChip,
+                selectedRole === 'DONOR' && styles.quickChipActive,
+              ]}
+              onPress={() => handleRoleSelect('DONOR')}
+            >
+              <Text style={styles.quickChipText}>🩸 John Doe (O+ Donor)</Text>
+            </TouchableOpacity>
           </View>
-        </Card>
+        </View>
 
-        {/* Server Endpoint Config Toggle */}
+        {/* Discreet Server Settings Toggle */}
         <TouchableOpacity
           style={styles.configToggle}
           onPress={() => setShowConfig(!showConfig)}
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <Icon name="gear" size={16} color={colors.textSecondary} strokeWidth={2} />
+          <View style={styles.configToggleRow}>
+            <Icon name="gear" size={14} color={colors.textMuted} strokeWidth={2} />
             <Text style={styles.configToggleText}>
-              {showConfig ? 'Hide Server Settings' : 'Configure Server Endpoint'}
+              {showConfig ? 'Hide Network Configuration' : 'Network Settings'}
             </Text>
           </View>
         </TouchableOpacity>
 
         {showConfig && (
           <Card variant="outlined" style={styles.configCard}>
-            <Text style={styles.configTitle}>Backend API Settings</Text>
-            <Text style={styles.configDesc}>
-              Quick Presets (Tap to switch):
-            </Text>
-
+            <Text style={styles.configTitle}>API Endpoint Connection</Text>
             <View style={styles.presetRow}>
               <TouchableOpacity
                 style={[
@@ -225,7 +258,7 @@ export const LoginScreen = ({ navigation }: any) => {
                 ]}
                 onPress={() => applyPreset('http://localhost:5000/api')}
               >
-                <Text style={styles.presetChipText}>🔌 USB (localhost:5000)</Text>
+                <Text style={styles.presetChipText}>USB (localhost:5000)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -235,7 +268,7 @@ export const LoginScreen = ({ navigation }: any) => {
                 ]}
                 onPress={() => applyPreset('http://10.40.27.205:5000/api')}
               >
-                <Text style={styles.presetChipText}>📶 Wi-Fi (10.40.27.205)</Text>
+                <Text style={styles.presetChipText}>Wi-Fi (10.40.27.205)</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -245,37 +278,17 @@ export const LoginScreen = ({ navigation }: any) => {
                 ]}
                 onPress={() => applyPreset('http://10.0.2.2:5000/api')}
               >
-                <Text style={styles.presetChipText}>💻 Emulator (10.0.2.2)</Text>
+                <Text style={styles.presetChipText}>Emulator (10.0.2.2)</Text>
               </TouchableOpacity>
             </View>
 
             <Input
-              label="Custom API URL"
+              label="Custom Endpoint URL"
               value={serverUrl}
               onChangeText={setServerUrl}
               placeholder="http://192.168.x.x:5000/api"
               autoCapitalize="none"
             />
-
-            <View style={styles.configBtnRow}>
-              <Button
-                title="Test Connection"
-                onPress={() => testConnection(serverUrl.trim())}
-                variant="outline"
-                size="sm"
-                style={{ flex: 1 }}
-              />
-              <Button
-                title="Save & Use"
-                onPress={handleSaveConfig}
-                size="sm"
-                style={{ flex: 1 }}
-              />
-            </View>
-
-            <Text style={styles.hintText}>
-              Note for USB Debugging: Ensure you ran "adb reverse tcp:5000 tcp:5000" in your terminal so your phone routes port 5000 to your PC.
-            </Text>
           </Card>
         )}
       </ScrollView>
@@ -286,171 +299,211 @@ export const LoginScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#F8FAFC',
   },
   container: {
     padding: spacing.lg,
-    flexGrow: 1,
-    justifyContent: 'center',
+    paddingBottom: spacing.xxl,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginVertical: spacing.md,
   },
   logoBadge: {
     width: 64,
     height: 64,
-    borderRadius: borderRadius.xl,
-    backgroundColor: colors.primaryLight,
+    borderRadius: 32,
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-  },
-  logoIcon: {
-    fontSize: 32,
+    marginBottom: spacing.xs,
   },
   title: {
-    fontSize: typography.sizes.xxl,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
+    ...typography.h1,
+    color: '#0F172A',
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: typography.sizes.sm,
+    ...typography.bodySmall,
     color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  formCard: {
-    marginBottom: spacing.lg,
-  },
-  formTitle: {
-    fontSize: typography.sizes.lg,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  signInBtn: {
-    marginTop: spacing.sm,
-  },
-  registerPrompt: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: spacing.md,
-  },
-  promptText: {
-    fontSize: typography.sizes.sm,
-    color: colors.textSecondary,
-  },
-  linkText: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.primary,
-  },
-  demoCard: {
-    marginBottom: spacing.lg,
-  },
-  demoTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
-  },
-  demoSub: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    marginTop: 2,
-  },
-  demoButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  demoBtn: {
-    flex: 1,
-  },
-  configToggle: {
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  configToggleText: {
-    fontSize: typography.sizes.xs,
-    color: colors.textMuted,
-  },
-  configCard: {
-    marginTop: spacing.sm,
-  },
-  configTitle: {
-    fontSize: typography.sizes.sm,
-    fontWeight: typography.weights.bold,
-    color: colors.textPrimary,
-  },
-  configDesc: {
-    fontSize: typography.sizes.xs,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
     marginTop: 2,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: spacing.md,
     paddingVertical: 5,
     borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     marginTop: spacing.sm,
     gap: 6,
   },
   statusDot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: '#9CA3AF',
   },
   statusDotGreen: {
-    backgroundColor: '#10B981',
-  },
-  statusDotAmber: {
-    backgroundColor: '#F59E0B',
+    backgroundColor: '#059669',
   },
   statusDotRed: {
-    backgroundColor: '#EF4444',
+    backgroundColor: '#DC2626',
+  },
+  statusDotAmber: {
+    backgroundColor: '#D97706',
   },
   statusPillText: {
-    fontSize: typography.sizes.xs,
+    ...typography.caption,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#E2E8F0',
+    borderRadius: borderRadius.lg,
+    padding: 3,
+    marginBottom: spacing.md,
+  },
+  tabBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: borderRadius.md,
+    gap: 6,
+  },
+  tabBtnActive: {
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  tabText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  tabTextActive: {
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  formCard: {
+    padding: spacing.xl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  formTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    marginBottom: spacing.md,
+  },
+  signInBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: '#DC2626',
+  },
+  registerPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: spacing.lg,
+  },
+  promptText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+  linkText: {
+    ...typography.bodySmall,
+    color: '#DC2626',
+    fontWeight: '700',
+  },
+  quickAccountsSection: {
+    marginTop: spacing.lg,
+    alignItems: 'center',
+  },
+  quickTitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+  },
+  quickChipsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickChip: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: spacing.md,
+    paddingVertical: 8,
+    borderRadius: borderRadius.full,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  quickChipActive: {
+    borderColor: '#DC2626',
+    backgroundColor: '#FEE2E2',
+  },
+  quickChipText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  configToggle: {
+    alignItems: 'center',
+    marginTop: spacing.xl,
+    paddingVertical: spacing.xs,
+  },
+  configToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  configToggleText: {
+    ...typography.caption,
+    color: colors.textMuted,
+  },
+  configCard: {
+    marginTop: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: '#FFFFFF',
+    borderRadius: borderRadius.lg,
+  },
+  configTitle: {
+    ...typography.caption,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
   presetRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-    marginTop: spacing.xs,
+    gap: 6,
+    marginBottom: spacing.sm,
   },
   presetChip: {
-    paddingHorizontal: spacing.sm,
+    flex: 1,
     paddingVertical: 6,
-    borderRadius: borderRadius.md,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingHorizontal: 4,
+    borderRadius: borderRadius.sm,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
   },
   presetChipActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#3B82F6',
+    backgroundColor: '#DC2626',
   },
   presetChipText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '600',
     color: colors.textPrimary,
-    fontWeight: '500',
-  },
-  configBtnRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  hintText: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
-    lineHeight: 16,
   },
 });

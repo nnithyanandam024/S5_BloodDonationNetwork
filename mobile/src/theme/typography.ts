@@ -20,4 +20,36 @@ export const typography = {
     normal: 1.4,
     relaxed: 1.6,
   },
+
+  // Standard Composites
+  h1: {
+    fontSize: 26,
+    fontWeight: '800' as TextStyle['fontWeight'],
+    lineHeight: 32,
+  },
+  h2: {
+    fontSize: 20,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    lineHeight: 26,
+  },
+  h3: {
+    fontSize: 16,
+    fontWeight: '700' as TextStyle['fontWeight'],
+    lineHeight: 22,
+  },
+  body: {
+    fontSize: 15,
+    fontWeight: '400' as TextStyle['fontWeight'],
+    lineHeight: 22,
+  },
+  bodySmall: {
+    fontSize: 13,
+    fontWeight: '400' as TextStyle['fontWeight'],
+    lineHeight: 18,
+  },
+  caption: {
+    fontSize: 12,
+    fontWeight: '500' as TextStyle['fontWeight'],
+    lineHeight: 16,
+  },
 };
