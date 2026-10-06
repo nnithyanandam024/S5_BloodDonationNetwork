@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { BloodRequest, RequestState } from '../../types';
+import { BloodRequest, RequestState, FulfillmentTelemetry, InventoryUnit } from '../../types';
 
 export interface CreateRequestParams {
   bloodGroup: string;
@@ -9,6 +9,7 @@ export interface CreateRequestParams {
   searchRadiusKm?: number;
   notes?: string;
   requiredBy?: string;
+  autoReserveInventory?: boolean | number;
 }
 
 export const requestsApi = {
@@ -26,6 +27,52 @@ export const requestsApi = {
     return apiClient.get<{ request: BloodRequest }>(`/requests/${id}`);
   },
 
+  async getTelemetry(id: string): Promise<{ telemetry: FulfillmentTelemetry }> {
+    return apiClient.get<{ telemetry: FulfillmentTelemetry }>(`/requests/${id}/afgc-telemetry`);
+  },
+
+  async reserveInventory(
+    id: string,
+    count: number = 1
+  ): Promise<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }> {
+    return apiClient.post<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }>(
+      `/requests/${id}/inventory/reserve`,
+      { count }
+    );
+  },
+
+  async releaseInventory(
+    id: string,
+    unitIds?: string[]
+  ): Promise<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }> {
+    return apiClient.post<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }>(
+      `/requests/${id}/inventory/release`,
+      { unitIds }
+    );
+  },
+
+  async getAllInventory(): Promise<{ units: InventoryUnit[] }> {
+    return apiClient.get<{ units: InventoryUnit[] }>('/requests/inventory/all');
+  },
+
+  async simulateDonorAccept(
+    id: string
+  ): Promise<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }> {
+    return apiClient.post<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }>(
+      `/requests/${id}/simulate/donor-accept`,
+      {}
+    );
+  },
+
+  async simulateDonorCancel(
+    id: string
+  ): Promise<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }> {
+    return apiClient.post<{ message: string; telemetry: FulfillmentTelemetry; request: BloodRequest }>(
+      `/requests/${id}/simulate/donor-cancel`,
+      {}
+    );
+  },
+
   async updateRequestStatus(
     id: string,
     status: RequestState
@@ -35,3 +82,4 @@ export const requestsApi = {
     });
   },
 };
+

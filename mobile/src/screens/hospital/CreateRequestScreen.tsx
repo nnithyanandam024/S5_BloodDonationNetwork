@@ -20,11 +20,12 @@ export const CreateRequestScreen = ({ navigation }: any) => {
   const [urgency, setUrgency] = useState<UrgencyLevel>('CRITICAL');
   const [searchRadiusKm, setSearchRadiusKm] = useState('15');
   const [notes, setNotes] = useState('Emergency trauma ICU requirement');
+  const [autoReserveInventory, setAutoReserveInventory] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const COMPONENT_OPTIONS: { label: string; value: ComponentType }[] = [
-    { label: 'Whole Blood', value: 'WHOLE_BLOOD' },
     { label: 'Red Blood Cells (RBC)', value: 'RED_BLOOD_CELLS' },
+    { label: 'Whole Blood', value: 'WHOLE_BLOOD' },
     { label: 'Platelets', value: 'PLATELETS' },
     { label: 'Plasma', value: 'PLASMA' },
   ];
@@ -51,18 +52,19 @@ export const CreateRequestScreen = ({ navigation }: any) => {
         urgency,
         searchRadiusKm: Number(searchRadiusKm) || 15,
         notes: notes.trim(),
+        autoReserveInventory,
       });
 
-      Alert.alert('Request Broadcasted', res.message, [
+      Alert.alert('AFGC Cycle Activated', res.message, [
         {
-          text: 'Track Request',
+          text: 'Track AFGC Telemetry',
           onPress: () => {
             navigation.navigate('RequestDetails', { requestId: res.request.id });
           },
         },
       ]);
     } catch (err: any) {
-      Alert.alert('Creation Failed', err.message || 'Could not broadcast request');
+      Alert.alert('Creation Failed', err.message || 'Could not initiate AFGC cycle');
     } finally {
       setLoading(false);
     }
@@ -159,8 +161,35 @@ export const CreateRequestScreen = ({ navigation }: any) => {
             placeholder="e.g. ICU Bed 4, Emergency OT required immediately"
           />
 
+          {/* AFGC Dual-Source Information Card */}
+          <View style={styles.afgcInfoBox}>
+            <View style={styles.afgcInfoTop}>
+              <Text style={styles.afgcInfoTitle}>AFGC DUAL-SOURCE COORDINATION</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onPress={() => setAutoReserveInventory(!autoReserveInventory)}
+                style={[
+                  styles.togglePill,
+                  autoReserveInventory ? styles.togglePillActive : styles.togglePillInactive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    autoReserveInventory ? styles.toggleTextActive : styles.toggleTextInactive,
+                  ]}
+                >
+                  {autoReserveInventory ? 'ENABLED' : 'DISABLED'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.afgcInfoDesc}>
+              Interrogates authorized blood bank inventory reserves first (IR), securing compatible units and dispatching volunteer donors only for the unresolved gap G = Q − IR − DC.
+            </Text>
+          </View>
+
           <Button
-            title="Broadcast Emergency Request"
+            title="Launch AFGC Fulfillment Cycle"
             onPress={handleCreate}
             loading={loading}
             variant="danger"
@@ -246,5 +275,51 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: spacing.lg,
+  },
+  afgcInfoBox: {
+    backgroundColor: '#F3E8FF',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+    marginTop: spacing.md,
+  },
+  afgcInfoTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  afgcInfoTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#7047EB',
+    letterSpacing: 0.5,
+  },
+  togglePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  togglePillActive: {
+    backgroundColor: '#7047EB',
+  },
+  togglePillInactive: {
+    backgroundColor: '#9CA3AF',
+  },
+  toggleText: {
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  toggleTextActive: {
+    color: '#FFFFFF',
+  },
+  toggleTextInactive: {
+    color: '#FFFFFF',
+  },
+  afgcInfoDesc: {
+    fontSize: 11,
+    color: '#4C1D95',
+    lineHeight: 16,
   },
 });

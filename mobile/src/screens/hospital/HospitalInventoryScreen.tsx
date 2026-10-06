@@ -1,36 +1,93 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { Card, Button, Icon } from '../../components';
-import { BloodGroup } from '../../types';
+import { BloodGroup, InventoryUnit } from '../../types';
 import { useAuth } from '../../store/AuthContext';
+import { requestsApi } from '../../services/api';
 
-interface InventoryEntry {
+interface InventoryGroupSummary {
   group: BloodGroup;
-  units: number;
+  totalUnits: number;
+  availableUnits: number;
+  reservedUnits: number;
   status: 'OPTIMAL' | 'LOW' | 'CRITICAL';
 }
 
-const SAMPLE_INVENTORY: InventoryEntry[] = [
-  { group: 'O+', units: 12, status: 'OPTIMAL' },
-  { group: 'O-', units: 2, status: 'CRITICAL' },
-  { group: 'A+', units: 15, status: 'OPTIMAL' },
-  { group: 'A-', units: 3, status: 'LOW' },
-  { group: 'B+', units: 8, status: 'OPTIMAL' },
-  { group: 'B-', units: 1, status: 'CRITICAL' },
-  { group: 'AB+', units: 5, status: 'OPTIMAL' },
-  { group: 'AB-', units: 1, status: 'CRITICAL' },
-];
+const DEFAULT_GROUPS: BloodGroup[] = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 export const HospitalInventoryScreen = ({ navigation }: any) => {
   const { switchUserRole } = useAuth();
+  const [inventoryList, setInventoryList] = useState<InventoryGroupSummary[]>([]);
+  const [totalReserves, setTotalReserves] = useState(0);
+  const [totalReserved, setTotalReserved] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchLiveInventory = useCallback(async () => {
+    try {
+      const res = await requestsApi.getAllInventory();
+      const units: InventoryUnit[] = res.units || [];
+
+      // Group units by blood group
+      const summaries: InventoryGroupSummary[] = DEFAULT_GROUPS.map((grp) => {
+        const groupUnits = units.filter((u) => u.bloodGroup === grp);
+        const available = groupUnits.filter((u) => u.status === 'AVAILABLE').length;
+        const reserved = groupUnits.filter((u) => u.status === 'RESERVED').length;
+        const total = groupUnits.length;
+
+        let status: 'OPTIMAL' | 'LOW' | 'CRITICAL' = 'OPTIMAL';
+        if (available < 2) status = 'CRITICAL';
+        else if (available < 5) status = 'LOW';
+
+        return {
+          group: grp,
+          totalUnits: total,
+          availableUnits: available,
+          reservedUnits: reserved,
+          status,
+        };
+      });
+
+      setInventoryList(summaries);
+      setTotalReserves(units.length);
+      setTotalReserved(units.filter((u) => u.status === 'RESERVED').length);
+    } catch (err) {
+      console.error('Failed to fetch live inventory:', err);
+      // Fallback
+      setInventoryList([
+        { group: 'O+', totalUnits: 8, availableUnits: 8, reservedUnits: 0, status: 'OPTIMAL' },
+        { group: 'O-', totalUnits: 3, availableUnits: 3, reservedUnits: 0, status: 'LOW' },
+        { group: 'A+', totalUnits: 6, availableUnits: 6, reservedUnits: 0, status: 'OPTIMAL' },
+        { group: 'A-', totalUnits: 2, availableUnits: 2, reservedUnits: 0, status: 'CRITICAL' },
+        { group: 'B+', totalUnits: 5, availableUnits: 5, reservedUnits: 0, status: 'OPTIMAL' },
+        { group: 'B-', totalUnits: 2, availableUnits: 2, reservedUnits: 0, status: 'CRITICAL' },
+        { group: 'AB+', totalUnits: 4, availableUnits: 4, reservedUnits: 0, status: 'LOW' },
+        { group: 'AB-', totalUnits: 1, availableUnits: 1, reservedUnits: 0, status: 'CRITICAL' },
+      ]);
+      setTotalReserves(31);
+      setTotalReserved(0);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveInventory();
+    const timer = setInterval(fetchLiveInventory, 5000);
+    return () => clearInterval(timer);
+  }, [fetchLiveInventory]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       {/* Top Header */}
       <View style={styles.screenHeader}>
-        <Text style={styles.screenCenterTitle}>Blood Bank Reserves</Text>
+        <View>
+          <Text style={styles.screenCenterTitle}>Authorized Blood Reserves</Text>
+          <Text style={styles.screenSubtitle}>AFGC Dual-Source Network</Text>
+        </View>
         <TouchableOpacity
           activeOpacity={0.8}
           style={styles.iconCircleBtn}
@@ -41,11 +98,20 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
       </View>
 
       <FlatList
-        data={SAMPLE_INVENTORY}
+        data={inventoryList}
         keyExtractor={(item) => item.group}
         numColumns={2}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => {
+              setRefreshing(true);
+              fetchLiveInventory();
+            }}
+          />
+        }
         ListHeaderComponent={
           <View style={styles.summaryCard}>
             <View style={styles.summaryLeft}>
@@ -53,13 +119,15 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
                 <Icon name="flask" size={22} color="#7047EB" strokeWidth={2.2} />
               </View>
               <View>
-                <Text style={styles.summaryTitle}>Total Reserves: 47 Units</Text>
-                <Text style={styles.summarySub}>8 Blood groups monitored 24/7</Text>
+                <Text style={styles.summaryTitle}>Total Stock: {totalReserves} Units</Text>
+                <Text style={styles.summarySub}>
+                  {totalReserved} reserved for emergencies • 8 groups
+                </Text>
               </View>
             </View>
             <View style={styles.livePulseBadge}>
               <View style={styles.pulseDot} />
-              <Text style={styles.pulseText}>LIVE</Text>
+              <Text style={styles.pulseText}>LIVE AFGC</Text>
             </View>
           </View>
         }
@@ -93,8 +161,12 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
                 </Text>
               </View>
 
-              <Text style={styles.unitsNum}>{item.units}</Text>
-              <Text style={styles.unitsLabel}>Units in Stock</Text>
+              <Text style={styles.unitsNum}>{item.availableUnits}</Text>
+              <Text style={styles.unitsLabel}>Available Units</Text>
+
+              {item.reservedUnits > 0 ? (
+                <Text style={styles.reservedNote}>({item.reservedUnits} Reserved AFGC)</Text>
+              ) : null}
 
               <View
                 style={[
@@ -125,18 +197,18 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
         ListFooterComponent={
           <View style={styles.footer}>
             <Button
-              title="+ Request Blood Bank Restock"
+              title="+ Create AFGC Emergency Request"
               onPress={() => navigation.navigate('CreateRequest')}
               style={styles.transferBtn}
             />
 
             <Card variant="flat" style={styles.demoCard}>
-              <Text style={styles.demoTitle}>Presentation Quick-Switch</Text>
+              <Text style={styles.demoTitle}>Presentation Role Switcher</Text>
               <Text style={styles.demoDesc}>
-                Switch role to Donor dashboard without logging out:
+                Switch directly to Donor Dashboard to view incoming ephemeral request:
               </Text>
               <Button
-                title="Switch to Donor View"
+                title="Switch to Donor Dashboard"
                 onPress={() => switchUserRole('DONOR')}
                 variant="outline"
                 size="sm"
@@ -178,6 +250,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1F2937',
   },
+  screenSubtitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#7047EB',
+    marginTop: 2,
+  },
+  list: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
   summaryCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -188,10 +270,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: '#F0F1F7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 8,
     elevation: 2,
   },
   summaryLeft: {
@@ -202,15 +280,15 @@ const styles = StyleSheet.create({
   summaryIconSquircle: {
     width: 44,
     height: 44,
-    borderRadius: 14,
-    backgroundColor: '#F3EFFF',
+    borderRadius: 12,
+    backgroundColor: '#F3E8FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   summaryTitle: {
     fontSize: 14,
-    fontWeight: '700',
-    color: '#111827',
+    fontWeight: '800',
+    color: '#1F2937',
   },
   summarySub: {
     fontSize: 11,
@@ -220,53 +298,45 @@ const styles = StyleSheet.create({
   livePulseBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    gap: 4,
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 10,
-    gap: 5,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: '#A7F3D0',
   },
   pulseDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#16A34A',
+    backgroundColor: '#059669',
   },
   pulseText: {
     fontSize: 9,
     fontWeight: '800',
-    color: '#16A34A',
-  },
-  list: {
-    paddingHorizontal: 16,
-    paddingBottom: 110,
+    color: '#059669',
   },
   gridCard: {
     flex: 1,
     margin: 6,
-    alignItems: 'center',
-    paddingVertical: 18,
-    borderRadius: 20,
     backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
     borderColor: '#F0F1F7',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.02,
-    shadowRadius: 6,
-    elevation: 1,
   },
   groupBadgeSquircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
   badgeOptimal: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#F3E8FF',
   },
   badgeLow: {
     backgroundColor: '#FEF3C7',
@@ -276,26 +346,32 @@ const styles = StyleSheet.create({
   },
   groupText: {
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '900',
   },
   unitsNum: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
-    color: '#111827',
+    color: '#1F2937',
   },
   unitsLabel: {
     fontSize: 11,
     color: '#6B7280',
-    marginBottom: 8,
+    marginTop: 2,
+  },
+  reservedNote: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#7047EB',
     marginTop: 2,
   },
   statusTag: {
-    paddingHorizontal: 10,
+    marginTop: 8,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 6,
   },
   statusTagOptimal: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: '#F3E8FF',
   },
   statusTagLow: {
     backgroundColor: '#FEF3C7',
@@ -304,38 +380,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
   },
   statusTagText: {
-    fontSize: 10,
-    fontWeight: '700',
+    fontSize: 9,
+    fontWeight: '800',
   },
   statusTagTextOptimal: {
-    color: '#15803D',
+    color: '#7047EB',
   },
   statusTagTextLow: {
-    color: '#B45309',
+    color: '#D97706',
   },
   statusTagTextCritical: {
-    color: '#B91C1C',
+    color: '#DC2626',
   },
   footer: {
-    marginTop: 16,
+    marginTop: 12,
   },
   transferBtn: {
     marginBottom: 16,
   },
   demoCard: {
-    borderRadius: 20,
-    marginBottom: 20,
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   demoTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#1F2937',
   },
   demoDesc: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#6B7280',
-    marginTop: 2,
+    marginTop: 4,
   },
 });

@@ -27,4 +27,12 @@ export const donorsApi = {
       action,
     });
   },
+
+  async cancelCommitment(
+    requestId: string
+  ): Promise<{ message: string; request: BloodRequest }> {
+    return apiClient.post<{ message: string; request: BloodRequest }>('/donors/cancel', {
+      requestId,
+    });
+  },
 };

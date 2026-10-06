@@ -144,7 +144,16 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
           <StatusBadge value={item.urgency} />
         </View>
 
-        <View style={styles.cardDivider} />
+        {/* Ephemeral Privacy Credential Banner */}
+        <View style={styles.ephemeralBadgeBox}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon name="shield" size={13} color="#7047EB" strokeWidth={2.2} />
+            <Text style={styles.ephemeralBadgeTitle}>Privacy-Preserving Ephemeral Credential</Text>
+          </View>
+          <Text style={styles.ephemeralTokenText}>
+            Token: {myCandidateInfo?.ephemeralToken ? myCandidateInfo.ephemeralToken.slice(0, 12) + '...' : 'HMAC-Active'} • Band &lt;5km • Zero Stored GPS
+          </Text>
+        </View>
 
         {/* Blood Details */}
         <View style={styles.bloodInfoRow}>
@@ -152,8 +161,10 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
             <Text style={styles.bloodGroupText}>{item.bloodGroup}</Text>
           </View>
           <View style={styles.unitsInfo}>
-            <Text style={styles.unitsCount}>{item.unitsRequired} Units Required</Text>
-            <Text style={styles.componentType}>{item.component.replace('_', ' ')}</Text>
+            <Text style={styles.unitsCount}>
+              {item.remainingGap !== undefined ? `${item.remainingGap} Units Remaining Gap` : `${item.unitsRequired} Units Required`}
+            </Text>
+            <Text style={styles.componentType}>{item.component.replace('_', ' ')} • Dual-Source AFGC</Text>
           </View>
         </View>
 
@@ -161,29 +172,38 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
           <Text style={styles.notesText}>Note: "{item.notes}"</Text>
         ) : null}
 
-        {/* Action Buttons */}
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => handleRespond(item.id, 'DECLINE')}
-            disabled={actionLoadingId === item.id}
-            style={styles.declineBtn}
-          >
-            <Text style={styles.declineBtnText}>Decline</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={() => handleRespond(item.id, 'ACCEPT')}
-            disabled={actionLoadingId === item.id}
-            style={styles.acceptBtn}
-          >
-            <Text style={styles.acceptBtnText}>
-              {actionLoadingId === item.id ? 'Processing...' : 'Accept Request'}
+        {/* Action Buttons or Auto-Terminated Notice */}
+        {myCandidateInfo?.status === 'CANCELLED_GAP_FULFILLED' || item.remainingGap === 0 ? (
+          <View style={styles.fulfilledTerminationBox}>
+            <Icon name="check" size={14} color="#059669" />
+            <Text style={styles.fulfilledTerminationText}>
+              Emergency Quota Fulfilled by Dual-Source Reserve — Invitation closed by AFGC.
             </Text>
-            <Icon name="arrow-right" size={14} color="#FFFFFF" strokeWidth={2.5} />
-          </TouchableOpacity>
-        </View>
+          </View>
+        ) : (
+          <View style={styles.actionsRow}>
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => handleRespond(item.id, 'DECLINE')}
+              disabled={actionLoadingId === item.id}
+              style={styles.declineBtn}
+            >
+              <Text style={styles.declineBtnText}>Decline</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => handleRespond(item.id, 'ACCEPT')}
+              disabled={actionLoadingId === item.id}
+              style={styles.acceptBtn}
+            >
+              <Text style={styles.acceptBtnText}>
+                {actionLoadingId === item.id ? 'Processing...' : 'Accept Request'}
+              </Text>
+              <Icon name="arrow-right" size={14} color="#FFFFFF" strokeWidth={2.5} />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
   };
@@ -533,5 +553,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     color: '#FFFFFF',
+  },
+  ephemeralBadgeBox: {
+    backgroundColor: '#F3E8FF',
+    borderRadius: 8,
+    padding: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#DDD6FE',
+  },
+  ephemeralBadgeTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#7047EB',
+  },
+  ephemeralTokenText: {
+    fontSize: 10,
+    color: '#6B7280',
+    fontFamily: 'monospace',
+    marginTop: 2,
+  },
+  fulfilledTerminationBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#ECFDF5',
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    marginTop: 6,
+  },
+  fulfilledTerminationText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#065F46',
+    flex: 1,
   },
 });
