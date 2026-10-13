@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { requireAuth, requireRole } from '../middleware/auth';
-import { requestRepository, userRepository, inventoryRepository } from '../repositories';
+import { requestRepository, userRepository, inventoryRepository, donorRepository } from '../repositories';
 import { findAndRankDonors } from '../services/matching';
 import { validateAndTransition } from '../services/stateMachine';
-import { BloodRequest, HospitalProfile, RequestState } from '../types';
-
+import { BloodRequest, HospitalProfile, RequestState, DonationRecord } from '../types';
+import { storage } from '../services/storage';
 import { afgcEngine } from '../services/afgcEngine';
 
 export const requestsRouter = Router();
@@ -90,6 +90,19 @@ requestsRouter.get(
   (req: Request, res: Response): void => {
     const requests = requestRepository.findByHospitalId(req.user!.userId);
     res.json({ requests });
+  }
+);
+
+// GET /api/requests/donations - Hospital views all confirmed donation records received
+// MUST be before /:id to prevent Express treating 'donations' as a request ID
+requestsRouter.get(
+  '/donations',
+  requireAuth,
+  requireRole(['HOSPITAL']),
+  (req: Request, res: Response): void => {
+    const hospitalId = req.user!.userId;
+    const records = storage.getDonationsByHospital(hospitalId);
+    res.json({ records, totalReceived: records.length });
   }
 );
 
@@ -299,3 +312,119 @@ requestsRouter.get('/:id/live', (req: Request, res: Response): void => {
     unsubscribe();
   });
 });
+
+/**
+ * POST /api/requests/:id/confirm-receipt
+ * Hospital confirms blood was physically received from a specific donor.
+ * This creates an official DonationRecord, updates the donor's stats, and
+ * marks the commitment as RECEIVED. Only then is the donation considered complete.
+ */
+requestsRouter.post(
+  '/:id/confirm-receipt',
+  requireAuth,
+  requireRole(['HOSPITAL']),
+  (req: Request, res: Response): void => {
+    try {
+      const requestId = String(req.params.id);
+      const { donorId } = req.body;
+
+      if (!donorId) {
+        res.status(400).json({ error: 'donorId is required' });
+        return;
+      }
+
+      const hospital = userRepository.findById(req.user!.userId) as HospitalProfile | undefined;
+      if (!hospital) {
+        res.status(404).json({ error: 'Hospital not found' });
+        return;
+      }
+
+      if (hospital.id !== req.user!.userId) {
+        res.status(403).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const request = requestRepository.findById(requestId);
+      if (!request) {
+        res.status(404).json({ error: 'Blood request not found' });
+        return;
+      }
+
+      if (request.hospitalId !== req.user!.userId) {
+        res.status(403).json({ error: 'You can only confirm receipts for your own requests' });
+        return;
+      }
+
+      // Find the DONATED commitment for this donor
+      const commitment = (request.donorCommitments || []).find(
+        (c) => c.donorId === donorId && c.status === 'DONATED'
+      );
+      if (!commitment) {
+        res.status(400).json({
+          error: 'No DONATED commitment found for this donor. The donor must mark themselves as donated first.',
+        });
+        return;
+      }
+
+      const now = new Date().toISOString();
+
+      // Mark commitment as RECEIVED (fully confirmed)
+      commitment.status = 'RECEIVED';
+      commitment.receivedAt = now;
+      request.updatedAt = now;
+
+      // Create official DonationRecord
+      const donationRecord: DonationRecord = {
+        id: `DON-${Date.now().toString().slice(-8)}`,
+        requestId: request.id,
+        hospitalId: hospital.id,
+        hospitalName: hospital.hospitalName || hospital.name,
+        donorId: commitment.donorId,
+        donorName: commitment.donorName,
+        donorPhone: commitment.donorPhone,
+        bloodGroup: commitment.bloodGroup,
+        component: request.component,
+        donatedAt: commitment.donatedAt!,
+        receivedAt: now,
+        unitsGiven: 1,
+      };
+
+      storage.saveDonationRecord(donationRecord);
+
+      // Update donor's lastDonationDate and increment donationCount
+      try {
+        const donor = donorRepository.findDonorById(donorId);
+        if (donor) {
+          donorRepository.updateDonor(donorId, {
+            lastDonationDate: now,
+            donationCount: (donor.donationCount || 0) + 1,
+          });
+        }
+      } catch (_) {
+        // Non-fatal: donor stat update failed but record is saved
+      }
+
+      // If all gaps are now covered by received donations, mark request COMPLETED
+      const receivedCount = (request.donorCommitments || []).filter(
+        (c) => c.status === 'RECEIVED'
+      ).length;
+      const Q = request.requiredQuantity || request.unitsRequired;
+      const IR = request.reservedInventoryUnits || 0;
+      if (receivedCount + IR >= Q) {
+        request.status = 'COMPLETED';
+      }
+
+      requestRepository.save(request);
+
+      res.json({
+        message: `Blood receipt confirmed from ${commitment.donorName}. Donation record created.`,
+        donationRecord,
+        request,
+      });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message || 'Failed to confirm receipt' });
+    }
+  }
+);
+
+

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { BloodRequest, RequestState, FulfillmentTelemetry, InventoryUnit } from '../../types';
+import { BloodRequest, RequestState, FulfillmentTelemetry, InventoryUnit, DonationRecord } from '../../types';
 
 export interface CreateRequestParams {
   bloodGroup: string;
@@ -81,5 +81,25 @@ export const requestsApi = {
       status,
     });
   },
-};
 
+  /**
+   * Hospital confirms that blood was physically received from a specific donor.
+   * Creates an official DonationRecord and updates the donor's donation stats.
+   */
+  async confirmReceipt(
+    requestId: string,
+    donorId: string
+  ): Promise<{ message: string; donationRecord: DonationRecord; request: BloodRequest }> {
+    return apiClient.post<{ message: string; donationRecord: DonationRecord; request: BloodRequest }>(
+      `/requests/${requestId}/confirm-receipt`,
+      { donorId }
+    );
+  },
+
+  /**
+   * Returns all confirmed donation records received by the hospital.
+   */
+  async getDonationRecords(): Promise<{ records: DonationRecord[]; totalReceived: number }> {
+    return apiClient.get<{ records: DonationRecord[]; totalReceived: number }>('/requests/donations');
+  },
+};

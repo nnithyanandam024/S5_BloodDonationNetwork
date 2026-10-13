@@ -1,40 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { StatusBadge, Icon } from '../../components';
+import { StatusBadge, Icon, LoadingState, EmptyState } from '../../components';
 import { useAuth } from '../../store/AuthContext';
-
-interface HistoryItem {
-  id: string;
-  date: string;
-  type: string;
-  facility: string;
-  units: number;
-  status: 'COMPLETED';
-}
+import { donorsApi } from '../../services/api';
+import { DonationRecord } from '../../types';
 
 export const DonationHistoryScreen = ({ navigation }: any) => {
   const { user } = useAuth();
+  const [records, setRecords] = useState<DonationRecord[]>([]);
+  const [totalDonations, setTotalDonations] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const historyData: HistoryItem[] = [
-    {
-      id: 'don-1',
-      date: '12 Nov 2025',
-      type: 'Whole Blood',
-      facility: 'City Care Super Specialty Hospital',
-      units: 1,
-      status: 'COMPLETED',
-    },
-    {
-      id: 'don-2',
-      date: '10 Aug 2025',
-      type: 'Whole Blood',
-      facility: 'Red Cross Central Blood Bank',
-      units: 1,
-      status: 'COMPLETED',
-    },
-  ];
+  const fetchHistory = useCallback(async () => {
+    try {
+      const res = await donorsApi.getDonationHistory();
+      setRecords(res.records || []);
+      setTotalDonations(res.totalDonations || 0);
+    } catch (err) {
+      // Silently fail — user may have no records yet
+      setRecords([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
 
   const renderHeader = () => (
     <View style={styles.topSection}>
@@ -52,7 +48,7 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
           <View style={[styles.statIconCircle, { backgroundColor: '#FEE2E2' }]}>
             <Icon name="droplet" size={18} color="#DC2626" strokeWidth={2.2} />
           </View>
-          <Text style={styles.statNumber}>{user?.donationCount || historyData.length}</Text>
+          <Text style={styles.statNumber}>{totalDonations}</Text>
           <Text style={styles.statCaption}>Donations</Text>
         </View>
 
@@ -60,7 +56,7 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
           <View style={[styles.statIconCircle, { backgroundColor: '#FEF3C7' }]}>
             <Icon name="sparkles" size={18} color="#D97706" strokeWidth={2.2} />
           </View>
-          <Text style={styles.statNumber}>{(user?.donationCount || historyData.length) * 3}</Text>
+          <Text style={styles.statNumber}>{totalDonations * 3}</Text>
           <Text style={styles.statCaption}>Lives Saved</Text>
         </View>
 
@@ -68,33 +64,65 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
           <View style={[styles.statIconCircle, { backgroundColor: '#EDE9FE' }]}>
             <Icon name="star" size={18} color="#7047EB" strokeWidth={2.2} />
           </View>
-          <Text style={styles.statNumber}>450</Text>
+          <Text style={styles.statNumber}>{totalDonations * 150}</Text>
           <Text style={styles.statCaption}>Points</Text>
         </View>
       </View>
 
-      <Text style={styles.listSectionTitle}>Verified Records</Text>
+      {records.length > 0 && (
+        <Text style={styles.listSectionTitle}>Verified Records</Text>
+      )}
     </View>
   );
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+        {renderHeader()}
+        <LoadingState message="Loading your donation history..." />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <FlatList
-        data={historyData}
+        data={records}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
         contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => { setRefreshing(true); fetchHistory(); }}
+            colors={['#DC2626']}
+          />
+        }
+        ListEmptyComponent={
+          <EmptyState
+            title="No Donation Records Yet"
+            description="Your confirmed donation records will appear here after a hospital verifies they received your blood."
+          />
+        }
         renderItem={({ item }) => (
           <View style={styles.historyCard}>
             <View style={styles.cardHeaderRow}>
               <View style={styles.facilityInfo}>
-                <Text style={styles.facilityName}>{item.facility}</Text>
+                <Text style={styles.facilityName}>{item.hospitalName}</Text>
                 <View style={styles.dateRow}>
                   <Icon name="calendar" size={12} color="#6B7280" strokeWidth={2} />
-                  <Text style={styles.dateText}>{item.date} • {item.type}</Text>
+                  <Text style={styles.dateText}>
+                    {new Date(item.receivedAt).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
+                    })} • {item.component.replace(/_/g, ' ')}
+                  </Text>
                 </View>
               </View>
-              <StatusBadge value={item.status} label="Completed" />
+              <View style={styles.completedBadge}>
+                <Text style={styles.completedBadgeText}>Completed</Text>
+              </View>
             </View>
 
             <View style={styles.cardDivider} />
@@ -102,13 +130,18 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
             <View style={styles.detailsRow}>
               <View style={styles.detailPill}>
                 <Icon name="droplet" size={13} color="#7047EB" strokeWidth={2} />
-                <Text style={styles.detailPillText}>Donated: {item.units} Unit (450 ml)</Text>
+                <Text style={styles.detailPillText}>
+                  {item.bloodGroup} • {item.unitsGiven} Unit (450 ml)
+                </Text>
               </View>
               <View style={styles.verifiedChip}>
                 <Icon name="check" size={12} color="#059669" strokeWidth={2.5} />
                 <Text style={styles.verifiedChipText}>Verified</Text>
               </View>
             </View>
+
+            {/* Request ID reference */}
+            <Text style={styles.refText}>Ref: {item.requestId}</Text>
           </View>
         )}
       />
@@ -155,7 +188,6 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 1,
   },
-
   statsCardRow: {
     flexDirection: 'row',
     gap: 12,
@@ -193,7 +225,6 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 2,
   },
-
   listSectionTitle: {
     fontSize: 17,
     fontWeight: '700',
@@ -237,6 +268,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6B7280',
   },
+  completedBadge: {
+    backgroundColor: '#D1FAE5',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+  },
+  completedBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#065F46',
+  },
   cardDivider: {
     height: 1,
     backgroundColor: '#F3F4F6',
@@ -274,5 +316,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: '#059669',
+  },
+  refText: {
+    fontSize: 10,
+    color: '#9CA3AF',
+    marginTop: 8,
   },
 });

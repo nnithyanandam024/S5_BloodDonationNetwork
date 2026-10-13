@@ -35,7 +35,7 @@ export interface InventoryUnit {
   reservedAt?: string;
 }
 
-export type DonorCommitmentStatus = 'CONFIRMED' | 'ARRIVED' | 'CANCELLED';
+export type DonorCommitmentStatus = 'CONFIRMED' | 'ARRIVED' | 'DONATED' | 'RECEIVED' | 'CANCELLED';
 
 export interface DonorCommitment {
   id: string;
@@ -46,8 +46,26 @@ export interface DonorCommitment {
   status: DonorCommitmentStatus;
   committedAt: string;
   arrivedAt?: string;
+  donatedAt?: string;   // Set when donor marks blood as physically donated
+  receivedAt?: string;  // Set when hospital confirms receipt
   cancelledAt?: string;
   ephemeralToken?: string;
+}
+
+// Official donation record — only created when hospital confirms receipt
+export interface DonationRecord {
+  id: string;
+  requestId: string;
+  hospitalId: string;
+  hospitalName: string;
+  donorId: string;
+  donorName: string;
+  donorPhone: string;
+  bloodGroup: BloodGroup;
+  component: ComponentType;
+  donatedAt: string;
+  receivedAt: string;
+  unitsGiven: number;
 }
 
 export type TierStatus = 'ACTIVE' | 'FULFILLED' | 'TIMED_OUT' | 'CANCELLED';
@@ -164,6 +182,7 @@ export interface BloodRequest {
   acceptedDonorName?: string;
   acceptedDonorPhone?: string;
   acceptedAt?: string;
+  donationRecords?: DonationRecord[]; // Confirmed donation records for this request
 }
 
 export interface EligibilityResult {

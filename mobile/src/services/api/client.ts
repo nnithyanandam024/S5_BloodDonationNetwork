@@ -40,8 +40,7 @@ export const getCandidateApiUrls = (): string[] => {
   candidates.push('http://127.0.0.1:5000/api');
 
   // Development computer LAN IP
-  candidates.push('http://10.40.27.205:5000/api');
-  candidates.push('http://10.10.187.171:5000/api');
+  candidates.push('http://10.40.42.78:5000/api');
 
   // Android emulator loopback alias
   if (Platform.OS === 'android') {
@@ -235,7 +234,7 @@ class ApiClient {
         throw new Error(
           `Unable to reach backend server at ${this.baseUrl}.\n\n` +
           `• For USB Debugging: Run 'adb reverse tcp:5000 tcp:5000' in terminal\n` +
-          `• For Wi-Fi: Connect PC & phone to same Wi-Fi (URL: http://10.10.187.171:5000/api)\n` +
+          `• For Wi-Fi: Connect PC & phone to same Wi-Fi (URL: http://10.40.42.78:5000/api)\n` +
           `• For Emulator: Use http://10.0.2.2:5000/api`
         );
       }

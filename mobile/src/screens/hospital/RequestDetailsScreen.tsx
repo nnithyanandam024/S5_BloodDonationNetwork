@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { Card, StatusBadge, Button, LoadingState, Header, Icon, QuotaProgressBar } from '../../components';
 import { requestsApi } from '../../services/api';
-import { BloodRequest, RequestState, FulfillmentTelemetry } from '../../types';
+import { BloodRequest, RequestState, FulfillmentTelemetry, DonationRecord } from '../../types';
 
 export const RequestDetailsScreen = ({ route, navigation }: any) => {
   const { requestId } = route.params;
@@ -23,6 +23,7 @@ export const RequestDetailsScreen = ({ route, navigation }: any) => {
   const [updating, setUpdating] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [showSimDrawer, setShowSimDrawer] = useState(false);
+  const [confirmingReceiptFor, setConfirmingReceiptFor] = useState<string | null>(null);
 
   const fetchDetails = useCallback(async () => {
     try {
@@ -128,6 +129,32 @@ export const RequestDetailsScreen = ({ route, navigation }: any) => {
     } finally {
       setSimulating(false);
     }
+  };
+
+  const handleConfirmReceipt = async (donorId: string, donorName: string) => {
+    Alert.alert(
+      'Confirm Blood Receipt',
+      `Confirm that blood was physically received from ${donorName}? This will finalize the donation record.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm Receipt',
+          style: 'default',
+          onPress: async () => {
+            setConfirmingReceiptFor(donorId);
+            try {
+              const res = await requestsApi.confirmReceipt(requestId, donorId);
+              Alert.alert('Donation Confirmed', res.message);
+              fetchDetails();
+            } catch (err: any) {
+              Alert.alert('Failed', err.message || 'Could not confirm receipt');
+            } finally {
+              setConfirmingReceiptFor(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading && !request) {
@@ -249,24 +276,37 @@ export const RequestDetailsScreen = ({ route, navigation }: any) => {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.commName}>{comm.donorName}</Text>
                     <Text style={styles.commMeta}>
-                      {comm.bloodGroup} • Confirmed at {new Date(comm.committedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {comm.bloodGroup}
+                      {comm.donatedAt
+                        ? ` • Donated at ${new Date(comm.donatedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : ` • Accepted at ${new Date(comm.committedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                     </Text>
                   </View>
-                  <View
-                    style={[
-                      styles.statusPillSmall,
-                      comm.status === 'CONFIRMED' ? styles.pillConfirmed : styles.pillCancelled,
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.statusPillSmallText,
-                        comm.status === 'CONFIRMED' ? styles.textConfirmed : styles.textCancelled,
-                      ]}
+
+                  {/* Status pill or Confirm Receipt button */}
+                  {comm.status === 'DONATED' ? (
+                    <TouchableOpacity
+                      style={styles.confirmReceiptBtn}
+                      disabled={confirmingReceiptFor === comm.donorId}
+                      onPress={() => handleConfirmReceipt(comm.donorId, comm.donorName)}
                     >
-                      {comm.status === 'CONFIRMED' ? 'En Route' : 'Cancelled'}
-                    </Text>
-                  </View>
+                      <Text style={styles.confirmReceiptBtnText}>
+                        {confirmingReceiptFor === comm.donorId ? 'Confirming...' : '✓ Confirm Receipt'}
+                      </Text>
+                    </TouchableOpacity>
+                  ) : comm.status === 'RECEIVED' ? (
+                    <View style={[styles.statusPillSmall, styles.pillReceived]}>
+                      <Text style={[styles.statusPillSmallText, styles.textReceived]}>Received ✓</Text>
+                    </View>
+                  ) : comm.status === 'CONFIRMED' || comm.status === 'ARRIVED' ? (
+                    <View style={[styles.statusPillSmall, styles.pillConfirmed]}>
+                      <Text style={[styles.statusPillSmallText, styles.textConfirmed]}>En Route</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.statusPillSmall, styles.pillCancelled]}>
+                      <Text style={[styles.statusPillSmallText, styles.textCancelled]}>Cancelled</Text>
+                    </View>
+                  )}
                 </View>
               ))
             ) : null}
@@ -580,6 +620,9 @@ const styles = StyleSheet.create({
   pillCancelled: {
     backgroundColor: '#FEE2E2',
   },
+  pillReceived: {
+    backgroundColor: '#D1FAE5',
+  },
   statusPillSmallText: {
     fontSize: 10,
     fontWeight: '700',
@@ -590,6 +633,21 @@ const styles = StyleSheet.create({
   textCancelled: {
     color: '#DC2626',
   },
+  textReceived: {
+    color: '#065F46',
+  },
+  confirmReceiptBtn: {
+    backgroundColor: '#059669',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: borderRadius.md,
+  },
+  confirmReceiptBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+
   poolHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

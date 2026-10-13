@@ -89,8 +89,14 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
   const renderRequestCard = ({ item }: { item: BloodRequest }) => {
     const myCandidateInfo = item.matchedCandidates?.find((c) => c.donorId === user?.id);
     const distanceKm = myCandidateInfo?.distanceKm ? myCandidateInfo.distanceKm.toFixed(1) : '2.1';
-    const isAccepted = myCandidateInfo?.status === 'ACCEPTED' || (item.donorCommitments || []).some(c => c.donorId === user?.id && c.status === 'CONFIRMED');
-    const isClosed = myCandidateInfo?.status === 'CANCELLED_GAP_FULFILLED' || item.remainingGap === 0;
+    const myCommitment = (item.donorCommitments || []).find((c) => c.donorId === user?.id);
+
+    // Determine the donor's current state for this request
+    const isAccepted = myCommitment?.status === 'CONFIRMED' || myCommitment?.status === 'ARRIVED' ||
+      myCandidateInfo?.status === 'ACCEPTED';
+    const hasDonated = myCommitment?.status === 'DONATED';
+    const isReceived = myCommitment?.status === 'RECEIVED';
+    const isClosed = myCandidateInfo?.status === 'CANCELLED_GAP_FULFILLED' && !myCommitment;
 
     return (
       <View style={styles.requestCard}>
@@ -121,39 +127,75 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
               {item.component ? item.component.replace('_', ' ') : 'Whole Blood'}
             </Text>
           </View>
-
-          {/* Quick Intake Pass Button if accepted */}
-          {isAccepted && (
-            <TouchableOpacity
-              style={styles.viewPassBtn}
-              onPress={() => setActivePassRequest(item)}
-            >
-              <Icon name="shield" size={14} color="#0D9488" strokeWidth={2} />
-              <Text style={styles.viewPassText}>Intake Pass</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {item.notes ? (
           <Text style={styles.notesText}>Note: "{item.notes}"</Text>
         ) : null}
 
-        {/* State Banners or Action Buttons */}
-        {isClosed && !isAccepted ? (
+        {/* ── STEP 3: Blood received & confirmed by hospital ── */}
+        {isReceived ? (
+          <View style={styles.receivedBox}>
+            <Icon name="check" size={16} color="#059669" strokeWidth={2.4} />
+            <Text style={styles.receivedText}>
+              Donation confirmed by hospital — your record has been finalized. Thank you!
+            </Text>
+          </View>
+
+        ) : hasDonated ? (
+          /* ── STEP 2: Donor has marked as donated, awaiting hospital confirmation ── */
+          <View style={styles.donatedBox}>
+            <Icon name="clock" size={16} color="#D97706" strokeWidth={2.2} />
+            <Text style={styles.donatedText}>
+              Donation submitted ✓  Awaiting hospital confirmation to finalize your record.
+            </Text>
+          </View>
+
+        ) : isAccepted ? (
+          /* ── STEP 1: Donor accepted — proceed to hospital and donate ── */
+          <View>
+            <View style={styles.acceptedConfirmationBox}>
+              <Icon name="check" size={16} color="#0D9488" strokeWidth={2.4} />
+              <Text style={styles.acceptedConfirmationText}>
+                You are confirmed — please proceed to {item.hospitalName} and donate blood.
+              </Text>
+            </View>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={styles.markDonatedBtn}
+              disabled={actionLoadingId === item.id}
+              onPress={async () => {
+                setActionLoadingId(item.id);
+                try {
+                  const { donorsApi } = require('../../services/api');
+                  const res = await donorsApi.markAsDonated(item.id);
+                  Alert.alert('Donation Recorded', res.message);
+                  fetchRequests();
+                } catch (err: any) {
+                  Alert.alert('Failed', err.message || 'Could not record donation');
+                } finally {
+                  setActionLoadingId(null);
+                }
+              }}
+            >
+              <Icon name="droplet" size={16} color="#FFFFFF" strokeWidth={2.2} />
+              <Text style={styles.markDonatedBtnText}>
+                {actionLoadingId === item.id ? 'Recording...' : 'I Have Donated Blood'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+        ) : isClosed ? (
+          /* ── Gap filled by someone else ── */
           <View style={styles.fulfilledTerminationBox}>
             <Icon name="check" size={16} color="#059669" strokeWidth={2.2} />
             <Text style={styles.fulfilledTerminationText}>
-              Requirement Met — Another volunteer or reserve checked in first. Thank you for your readiness!
+              Requirement Met — Another volunteer checked in first. Thank you for your readiness!
             </Text>
           </View>
-        ) : isAccepted ? (
-          <View style={styles.acceptedConfirmationBox}>
-            <Icon name="check" size={16} color="#0D9488" strokeWidth={2.4} />
-            <Text style={styles.acceptedConfirmationText}>
-              You are confirmed for this emergency. Please proceed to intake.
-            </Text>
-          </View>
+
         ) : (
+          /* ── Not yet responded ── */
           <View style={styles.actionsRow}>
             <TouchableOpacity
               activeOpacity={0.8}
@@ -171,7 +213,7 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
               style={styles.acceptBtn}
             >
               <Text style={styles.acceptBtnText}>
-                {actionLoadingId === item.id ? 'Confirming...' : 'Accept Emergency'}
+                {actionLoadingId === item.id ? 'Confirming...' : 'Accept & Go Donate'}
               </Text>
               <Icon name="arrow-right" size={14} color="#FFFFFF" strokeWidth={2.4} />
             </TouchableOpacity>
@@ -180,6 +222,7 @@ export const DonorRequestsScreen = ({ navigation }: any) => {
       </View>
     );
   };
+
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
@@ -443,6 +486,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     gap: spacing.xs,
     marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
   acceptedConfirmationText: {
     ...typography.caption,
@@ -450,6 +494,56 @@ const styles = StyleSheet.create({
     flex: 1,
     fontWeight: '600',
   },
+  markDonatedBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#DC2626',
+    paddingVertical: 12,
+    borderRadius: borderRadius.md,
+    marginTop: 4,
+  },
+  markDonatedBtnText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  donatedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFBEB',
+    borderColor: '#FDE68A',
+    borderWidth: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  donatedText: {
+    ...typography.caption,
+    color: '#92400E',
+    flex: 1,
+    fontWeight: '600',
+  },
+  receivedBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    borderColor: '#A7F3D0',
+    borderWidth: 1,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  receivedText: {
+    ...typography.caption,
+    color: '#065F46',
+    flex: 1,
+    fontWeight: '600',
+  },
+
   actionsRow: {
     flexDirection: 'row',
     gap: spacing.sm,

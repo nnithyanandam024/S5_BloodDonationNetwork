@@ -5,12 +5,15 @@ import {
   HospitalProfile,
   BloodRequest,
   MatchCandidate,
+  DonationRecord,
 } from '../types';
 
 export class StorageService {
   private users: Map<string, BaseUser | DonorProfile | HospitalProfile> = new Map();
   private requests: Map<string, BloodRequest> = new Map();
   private requestListeners: Map<string, Set<(request: BloodRequest) => void>> = new Map();
+  // Global donation records indexed by donorId for fast donor history lookup
+  private donationRecords: Map<string, DonationRecord[]> = new Map();
 
   constructor() {
     this.seedInitialData();
@@ -304,6 +307,45 @@ export class StorageService {
         }
       }
     }
+  }
+
+  // ---- Donation Record Methods ----
+
+  public saveDonationRecord(record: DonationRecord): void {
+    // Store on the blood request itself
+    const request = this.requests.get(record.requestId);
+    if (request) {
+      if (!request.donationRecords) request.donationRecords = [];
+      const exists = request.donationRecords.some((r) => r.id === record.id);
+      if (!exists) request.donationRecords.push(record);
+      this.requests.set(request.id, request);
+    }
+
+    // Index by donorId for fast history lookup
+    if (!this.donationRecords.has(record.donorId)) {
+      this.donationRecords.set(record.donorId, []);
+    }
+    const donorRecords = this.donationRecords.get(record.donorId)!;
+    const exists = donorRecords.some((r) => r.id === record.id);
+    if (!exists) donorRecords.push(record);
+  }
+
+  public getDonationsByDonor(donorId: string): DonationRecord[] {
+    return (this.donationRecords.get(donorId) || []).sort(
+      (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+    );
+  }
+
+  public getDonationsByHospital(hospitalId: string): DonationRecord[] {
+    const records: DonationRecord[] = [];
+    for (const donorRecords of this.donationRecords.values()) {
+      for (const r of donorRecords) {
+        if (r.hospitalId === hospitalId) records.push(r);
+      }
+    }
+    return records.sort(
+      (a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+    );
   }
 }
 
