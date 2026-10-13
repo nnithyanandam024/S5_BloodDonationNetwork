@@ -1,0 +1,21 @@
+# Backend specific ignore
+node_modules/
+dist/
+build/
+*.log
+
+# Sensitive environment and credentials
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+
+credentials/
+secrets/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!*.example.json

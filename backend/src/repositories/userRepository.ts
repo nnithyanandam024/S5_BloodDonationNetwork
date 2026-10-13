@@ -4,6 +4,7 @@ import { storage } from '../services/storage';
 export interface IUserRepository {
   findById(id: string): (BaseUser | DonorProfile | HospitalProfile) | undefined;
   findByEmail(email: string): (BaseUser | DonorProfile | HospitalProfile) | undefined;
+  findByGoogleUid(googleUid: string): (BaseUser | DonorProfile | HospitalProfile) | undefined;
   save(user: BaseUser | DonorProfile | HospitalProfile): void;
 }
 
@@ -14,6 +15,10 @@ export class InMemoryUserRepository implements IUserRepository {
 
   public findByEmail(email: string): (BaseUser | DonorProfile | HospitalProfile) | undefined {
     return storage.getUserByEmail(email);
+  }
+
+  public findByGoogleUid(googleUid: string): (BaseUser | DonorProfile | HospitalProfile) | undefined {
+    return storage.getUserByGoogleUid(googleUid);
   }
 
   public save(user: BaseUser | DonorProfile | HospitalProfile): void {

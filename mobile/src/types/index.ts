@@ -125,6 +125,9 @@ export interface User {
   email: string;
   phone: string;
   role: UserRole;
+  googleUid?: string;
+  authProvider?: 'LOCAL' | 'GOOGLE';
+  photoUrl?: string;
   createdAt: string;
   // Donor specific
   bloodGroup?: BloodGroup;

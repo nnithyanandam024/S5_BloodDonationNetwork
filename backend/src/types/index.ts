@@ -134,7 +134,10 @@ export interface BaseUser {
   email: string;
   phone: string;
   role: UserRole;
-  passwordHash: string;
+  passwordHash?: string;
+  googleUid?: string;
+  authProvider?: 'LOCAL' | 'GOOGLE';
+  photoUrl?: string;
   createdAt: string;
 }
 

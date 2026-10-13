@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,59 +7,32 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { Input, Button, Card, Icon } from '../../components';
+import { Input, Button, Card, Icon, BloodGroupSelector } from '../../components';
 import { useAuth } from '../../store/AuthContext';
-import { apiClient } from '../../services/api';
 
 export const LoginScreen = ({ navigation }: any) => {
-  const { login, isLoading } = useAuth();
+  const { login, loginWithGoogle, completeGoogleRegistration } = useAuth();
   const [selectedRole, setSelectedRole] = useState<'HOSPITAL' | 'DONOR'>('HOSPITAL');
   const [email, setEmail] = useState('hospital@citycare.org');
   const [password, setPassword] = useState('Password123!');
-  const [showConfig, setShowConfig] = useState(false);
-  const [serverUrl, setServerUrl] = useState(apiClient.getBaseUrl());
-  const [connStatus, setConnStatus] = useState<'idle' | 'testing' | 'connected' | 'error'>('idle');
-  const [connDetails, setConnDetails] = useState<string>('');
 
-  const testConnection = async (targetUrl = serverUrl) => {
-    setConnStatus('testing');
-    setConnDetails('Verifying network status...');
-    const result = await apiClient.checkHealth(targetUrl, 3000);
-    if (result.ok) {
-      setConnStatus('connected');
-      setConnDetails(`Active (${result.latency}ms)`);
-    } else {
-      setConnStatus('error');
-      setConnDetails(result.message || 'Offline');
-    }
-  };
+  // Independent loading states for individual buttons
+  const [isEmailSubmitting, setIsEmailSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
-  useEffect(() => {
-    // Probe on mount to verify backend connectivity
-    (async () => {
-      setConnStatus('testing');
-      const initial = apiClient.getBaseUrl();
-      const direct = await apiClient.checkHealth(initial, 2000);
-      if (direct.ok) {
-        setConnStatus('connected');
-        setConnDetails(`Active (${direct.latency}ms)`);
-        return;
-      }
-
-      const detected = await apiClient.autoDetectWorkingHost();
-      if (detected) {
-        setServerUrl(detected);
-        setConnStatus('connected');
-        setConnDetails('Auto-connected');
-      } else {
-        setConnStatus('error');
-        setConnDetails('Network unavailable');
-      }
-    })();
-  }, []);
+  // Google Sign-In profile completion modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [googleUserData, setGoogleUserData] = useState<any>(null);
+  const [pendingFirebaseIdToken, setPendingFirebaseIdToken] = useState<string>('');
+  const [compRole, setCompRole] = useState<'DONOR' | 'HOSPITAL'>('DONOR');
+  const [compBloodGroup, setCompBloodGroup] = useState<any>('O+');
+  const [compPhone, setCompPhone] = useState('');
+  const [compHospitalName, setCompHospitalName] = useState('');
+  const [compLicense, setCompLicense] = useState('');
 
   const handleRoleSelect = (role: 'HOSPITAL' | 'DONOR') => {
     setSelectedRole(role);
@@ -79,26 +52,74 @@ export const LoginScreen = ({ navigation }: any) => {
     }
 
     try {
+      setIsEmailSubmitting(true);
       await login(email.trim(), password.trim());
     } catch (err: any) {
-      const msg = err.message || 'Please check your credentials';
-      Alert.alert('Sign In Failed', msg);
-      if (msg.includes('Unable to reach') || msg.includes('timed out')) {
-        setShowConfig(true);
-        testConnection();
-      }
+      Alert.alert('Sign In Failed', err.message || 'Please check your credentials');
+    } finally {
+      setIsEmailSubmitting(false);
     }
   };
 
-  const applyPreset = (presetUrl: string) => {
-    setServerUrl(presetUrl);
-    apiClient.setBaseUrl(presetUrl, true);
-    testConnection(presetUrl);
+  const handleGoogleLogin = async () => {
+    try {
+      setGoogleLoading(true);
+      const res = await loginWithGoogle();
+      if (res.isNewUser) {
+        setGoogleUserData(res.googleData);
+        setPendingFirebaseIdToken(res.firebaseIdToken || '');
+        setCompRole(selectedRole);
+        if (selectedRole === 'HOSPITAL') {
+          setCompHospitalName(res.googleData?.name || '');
+        }
+        setShowProfileModal(true);
+      }
+    } catch (err: any) {
+      if (err.code === 'SIGN_IN_CANCELLED' || err.message?.includes('cancelled')) {
+        return;
+      }
+      Alert.alert('Google Sign-In Failed', err.message || 'Unable to sign in with Google');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleCompleteProfile = async () => {
+    if (!compPhone.trim()) {
+      Alert.alert('Phone Required', 'Please enter your contact phone number.');
+      return;
+    }
+    if (compRole === 'HOSPITAL' && !compHospitalName.trim()) {
+      Alert.alert('Hospital Name Required', 'Please enter your facility name.');
+      return;
+    }
+
+    try {
+      setGoogleLoading(true);
+      await completeGoogleRegistration({
+        idToken: pendingFirebaseIdToken,
+        role: compRole,
+        phone: compPhone.trim(),
+        name: compRole === 'HOSPITAL' ? compHospitalName.trim() : (googleUserData?.name || 'Blood Donor'),
+        bloodGroup: compBloodGroup,
+        hospitalName: compHospitalName.trim(),
+        licenseNumber: compLicense.trim() || 'LIC-PENDING',
+      });
+      setShowProfileModal(false);
+    } catch (err: any) {
+      Alert.alert('Registration Failed', err.message || 'Could not complete registration.');
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
         {/* Brand Header */}
         <View style={styles.header}>
           <View style={styles.logoBadge}>
@@ -106,25 +127,6 @@ export const LoginScreen = ({ navigation }: any) => {
           </View>
           <Text style={styles.title}>BloodLink</Text>
           <Text style={styles.subtitle}>Emergency Blood Fulfillment Network</Text>
-
-          {/* Connection Status Pill */}
-          <View style={styles.statusPill}>
-            {connStatus === 'testing' && <ActivityIndicator size="small" color="#D97706" />}
-            <View
-              style={[
-                styles.statusDot,
-                connStatus === 'connected' && styles.statusDotGreen,
-                connStatus === 'error' && styles.statusDotRed,
-                connStatus === 'testing' && styles.statusDotAmber,
-              ]}
-            />
-            <Text style={styles.statusPillText}>
-              {connStatus === 'connected' && `Network Ready • ${connDetails}`}
-              {connStatus === 'testing' && (connDetails || 'Checking network...')}
-              {connStatus === 'error' && `Offline • ${connDetails}`}
-              {connStatus === 'idle' && 'Network Ready'}
-            </Text>
-          </View>
         </View>
 
         {/* Portal Selector Tabs */}
@@ -132,6 +134,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <TouchableOpacity
             style={[styles.tabBtn, selectedRole === 'HOSPITAL' && styles.tabBtnActive]}
             onPress={() => handleRoleSelect('HOSPITAL')}
+            activeOpacity={0.8}
           >
             <Icon
               name="hospital"
@@ -152,6 +155,7 @@ export const LoginScreen = ({ navigation }: any) => {
           <TouchableOpacity
             style={[styles.tabBtn, selectedRole === 'DONOR' && styles.tabBtnActive]}
             onPress={() => handleRoleSelect('DONOR')}
+            activeOpacity={0.8}
           >
             <Icon
               name="user"
@@ -196,9 +200,34 @@ export const LoginScreen = ({ navigation }: any) => {
           <Button
             title="Sign In"
             onPress={handleLogin}
-            loading={isLoading}
+            loading={isEmailSubmitting}
+            disabled={isEmailSubmitting || googleLoading}
             style={styles.signInBtn}
           />
+
+          {/* Social Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Sign In Button */}
+          <TouchableOpacity
+            style={[styles.googleBtn, (isEmailSubmitting || googleLoading) && styles.btnDisabled]}
+            onPress={handleGoogleLogin}
+            disabled={isEmailSubmitting || googleLoading}
+            activeOpacity={0.8}
+          >
+            {googleLoading ? (
+              <ActivityIndicator size="small" color="#1F2937" />
+            ) : (
+              <View style={styles.googleBtnContent}>
+                <Icon name="google" size={18} />
+                <Text style={styles.googleBtnText}>Continue with Google</Text>
+              </View>
+            )}
+          </TouchableOpacity>
 
           <View style={styles.registerPrompt}>
             <Text style={styles.promptText}>New facility or donor? </Text>
@@ -207,91 +236,115 @@ export const LoginScreen = ({ navigation }: any) => {
             </TouchableOpacity>
           </View>
         </Card>
+      </ScrollView>
 
-        {/* Quick Demo Accounts Pill Chips */}
-        <View style={styles.quickAccountsSection}>
-          <Text style={styles.quickTitle}>Quick Demo Switcher (1-Tap):</Text>
-          <View style={styles.quickChipsRow}>
-            <TouchableOpacity
-              style={[
-                styles.quickChip,
-                selectedRole === 'HOSPITAL' && styles.quickChipActive,
-              ]}
-              onPress={() => handleRoleSelect('HOSPITAL')}
-            >
-              <Text style={styles.quickChipText}>🏥 City Care Hospital</Text>
-            </TouchableOpacity>
+      {/* New User Profile Completion Modal */}
+      <Modal
+        visible={showProfileModal}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalHeader}>
+                <View style={styles.modalBadge}>
+                  <Icon name="sparkles" size={20} color="#DC2626" />
+                </View>
+                <Text style={styles.modalTitle}>Complete Your Profile</Text>
+                <Text style={styles.modalSubtitle}>
+                  Signed in as {googleUserData?.email}. Please choose your clinical role to finalize onboarding.
+                </Text>
+              </View>
 
-            <TouchableOpacity
-              style={[
-                styles.quickChip,
-                selectedRole === 'DONOR' && styles.quickChipActive,
-              ]}
-              onPress={() => handleRoleSelect('DONOR')}
-            >
-              <Text style={styles.quickChipText}>🩸 John Doe (O+ Donor)</Text>
-            </TouchableOpacity>
+              {/* Role Toggle */}
+              <View style={styles.modalRoleRow}>
+                <TouchableOpacity
+                  style={[styles.modalRoleBtn, compRole === 'DONOR' && styles.modalRoleBtnActive]}
+                  onPress={() => setCompRole('DONOR')}
+                >
+                  <Icon
+                    name="user"
+                    size={16}
+                    color={compRole === 'DONOR' ? '#DC2626' : colors.textSecondary}
+                  />
+                  <Text style={[styles.modalRoleText, compRole === 'DONOR' && styles.modalRoleTextActive]}>
+                    Voluntary Donor
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalRoleBtn, compRole === 'HOSPITAL' && styles.modalRoleBtnActive]}
+                  onPress={() => setCompRole('HOSPITAL')}
+                >
+                  <Icon
+                    name="hospital"
+                    size={16}
+                    color={compRole === 'HOSPITAL' ? '#DC2626' : colors.textSecondary}
+                  />
+                  <Text style={[styles.modalRoleText, compRole === 'HOSPITAL' && styles.modalRoleTextActive]}>
+                    Hospital Facility
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {compRole === 'DONOR' ? (
+                <>
+                  <BloodGroupSelector
+                    selected={compBloodGroup}
+                    onSelect={(g) => setCompBloodGroup(g)}
+                    label="Blood Group"
+                  />
+                  <Input
+                    label="Mobile Phone"
+                    placeholder="+91 98765 43210"
+                    value={compPhone}
+                    onChangeText={setCompPhone}
+                    keyboardType="phone-pad"
+                  />
+                </>
+              ) : (
+                <>
+                  <Input
+                    label="Hospital Name"
+                    placeholder="e.g. City Care Hospital"
+                    value={compHospitalName}
+                    onChangeText={setCompHospitalName}
+                  />
+                  <Input
+                    label="Clinical License Number"
+                    placeholder="e.g. LIC-BLR-042"
+                    value={compLicense}
+                    onChangeText={setCompLicense}
+                  />
+                  <Input
+                    label="Emergency Desk Phone"
+                    placeholder="+91 80 2234 5678"
+                    value={compPhone}
+                    onChangeText={setCompPhone}
+                    keyboardType="phone-pad"
+                  />
+                </>
+              )}
+
+              <Button
+                title="Finish & Enter BloodLink"
+                onPress={handleCompleteProfile}
+                loading={googleLoading}
+                style={styles.modalSubmitBtn}
+              />
+
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowProfileModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
-
-        {/* Discreet Server Settings Toggle */}
-        <TouchableOpacity
-          style={styles.configToggle}
-          onPress={() => setShowConfig(!showConfig)}
-        >
-          <View style={styles.configToggleRow}>
-            <Icon name="gear" size={14} color={colors.textMuted} strokeWidth={2} />
-            <Text style={styles.configToggleText}>
-              {showConfig ? 'Hide Network Configuration' : 'Network Settings'}
-            </Text>
-          </View>
-        </TouchableOpacity>
-
-        {showConfig && (
-          <Card variant="outlined" style={styles.configCard}>
-            <Text style={styles.configTitle}>API Endpoint Connection</Text>
-            <View style={styles.presetRow}>
-              <TouchableOpacity
-                style={[
-                  styles.presetChip,
-                  serverUrl.includes('localhost:5000') && styles.presetChipActive,
-                ]}
-                onPress={() => applyPreset('http://localhost:5000/api')}
-              >
-                <Text style={styles.presetChipText}>USB (localhost:5000)</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.presetChip,
-                  serverUrl.includes('10.40.27.205') && styles.presetChipActive,
-                ]}
-                onPress={() => applyPreset('http://10.40.27.205:5000/api')}
-              >
-                <Text style={styles.presetChipText}>Wi-Fi (10.40.27.205)</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.presetChip,
-                  serverUrl.includes('10.0.2.2') && styles.presetChipActive,
-                ]}
-                onPress={() => applyPreset('http://10.0.2.2:5000/api')}
-              >
-                <Text style={styles.presetChipText}>Emulator (10.0.2.2)</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Input
-              label="Custom Endpoint URL"
-              value={serverUrl}
-              onChangeText={setServerUrl}
-              placeholder="http://192.168.x.x:5000/api"
-              autoCapitalize="none"
-            />
-          </Card>
-        )}
-      </ScrollView>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -302,12 +355,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   container: {
-    padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
   },
   header: {
     alignItems: 'center',
-    marginVertical: spacing.md,
+    marginBottom: spacing.lg,
   },
   logoBadge: {
     width: 64,
@@ -325,47 +380,17 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
   subtitle: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  statusPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 5,
-    borderRadius: borderRadius.full,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    marginTop: spacing.sm,
-    gap: 6,
-  },
-  statusDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-  },
-  statusDotGreen: {
-    backgroundColor: '#059669',
-  },
-  statusDotRed: {
-    backgroundColor: '#DC2626',
-  },
-  statusDotAmber: {
-    backgroundColor: '#D97706',
-  },
-  statusPillText: {
     ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
+    color: '#64748B',
+    marginTop: 2,
+    fontWeight: '500',
   },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#E2E8F0',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     padding: 3,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   tabBtn: {
     flex: 1,
@@ -373,40 +398,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 10,
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.sm,
     gap: 6,
   },
   tabBtnActive: {
     backgroundColor: '#FFFFFF',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
     elevation: 2,
   },
   tabText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+    ...typography.body,
     fontWeight: '600',
+    color: '#64748B',
   },
   tabTextActive: {
     color: '#0F172A',
     fontWeight: '700',
   },
   formCard: {
-    padding: spacing.xl,
-    borderRadius: borderRadius.xl,
+    padding: spacing.lg,
     backgroundColor: '#FFFFFF',
     borderColor: '#E2E8F0',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 4 },
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.04,
-    shadowRadius: 10,
+    shadowRadius: 8,
     elevation: 2,
   },
   formTitle: {
     ...typography.h3,
-    color: colors.textPrimary,
+    color: '#0F172A',
     fontWeight: '700',
     marginBottom: spacing.md,
   },
@@ -414,96 +439,138 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     backgroundColor: '#DC2626',
   },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    ...typography.caption,
+    color: '#94A3B8',
+    marginHorizontal: spacing.sm,
+    fontWeight: '600',
+  },
+  googleBtn: {
+    height: 48,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  googleBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  googleBtnText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: '#1E293B',
+  },
   registerPrompt: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: spacing.lg,
+    marginTop: spacing.md,
   },
   promptText: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
+    ...typography.body,
+    color: '#64748B',
   },
   linkText: {
-    ...typography.bodySmall,
+    ...typography.body,
     color: '#DC2626',
     fontWeight: '700',
   },
-  quickAccountsSection: {
-    marginTop: spacing.lg,
-    alignItems: 'center',
+
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'flex-end',
   },
-  quickTitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
-  },
-  quickChipsRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  quickChip: {
+  modalContent: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: spacing.md,
-    paddingVertical: 8,
-    borderRadius: borderRadius.full,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: spacing.lg,
+    maxHeight: '90%',
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  modalBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#FEE2E2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  modalTitle: {
+    ...typography.h2,
+    color: '#0F172A',
+    fontWeight: '700',
+  },
+  modalSubtitle: {
+    ...typography.caption,
+    color: '#64748B',
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 18,
+  },
+  modalRoleRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: spacing.md,
+  },
+  modalRoleBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    borderRadius: borderRadius.md,
+    gap: 6,
+    backgroundColor: '#F8FAFC',
   },
-  quickChipActive: {
+  modalRoleBtnActive: {
     borderColor: '#DC2626',
-    backgroundColor: '#FEE2E2',
+    backgroundColor: '#FEF2F2',
   },
-  quickChipText: {
-    ...typography.caption,
-    color: colors.textPrimary,
+  modalRoleText: {
+    ...typography.body,
+    color: '#64748B',
     fontWeight: '600',
   },
-  configToggle: {
-    alignItems: 'center',
-    marginTop: spacing.xl,
-    paddingVertical: spacing.xs,
-  },
-  configToggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  configToggleText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  configCard: {
-    marginTop: spacing.sm,
-    padding: spacing.md,
-    backgroundColor: '#FFFFFF',
-    borderRadius: borderRadius.lg,
-  },
-  configTitle: {
-    ...typography.caption,
+  modalRoleTextActive: {
+    color: '#DC2626',
     fontWeight: '700',
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
   },
-  presetRow: {
-    flexDirection: 'row',
-    gap: 6,
-    marginBottom: spacing.sm,
-  },
-  presetChip: {
-    flex: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    borderRadius: borderRadius.sm,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-  },
-  presetChipActive: {
+  modalSubmitBtn: {
+    marginTop: spacing.md,
     backgroundColor: '#DC2626',
   },
-  presetChipText: {
-    fontSize: 10,
+  modalCancelBtn: {
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    ...typography.body,
+    color: '#64748B',
     fontWeight: '600',
-    color: colors.textPrimary,
   },
 });

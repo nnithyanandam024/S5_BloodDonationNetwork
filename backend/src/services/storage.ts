@@ -228,9 +228,16 @@ export class StorageService {
     return this.users.get(id);
   }
 
+  public getUserByGoogleUid(googleUid: string): (BaseUser | DonorProfile | HospitalProfile) | undefined {
+    return this.users.get(`google:${googleUid}`);
+  }
+
   public saveUser(user: BaseUser | DonorProfile | HospitalProfile): void {
     this.users.set(user.email.trim().toLowerCase(), user);
     this.users.set(user.id, user);
+    if (user.googleUid) {
+      this.users.set(`google:${user.googleUid}`, user);
+    }
   }
 
   public getAllDonors(): DonorProfile[] {

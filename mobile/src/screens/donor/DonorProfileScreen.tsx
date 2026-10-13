@@ -174,21 +174,7 @@ export const DonorProfileScreen = ({ navigation }: any) => {
           </View>
         </View>
 
-        {/* Presentation Switch for Demonstration */}
-        <View style={styles.demoCard}>
-          <Text style={styles.demoTitle}>Presentation Role Switch</Text>
-          <Text style={styles.demoDesc}>
-            Quickly switch between Donor dashboard and Hospital portal:
-          </Text>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={() => switchUserRole('HOSPITAL')}
-            style={styles.switchRoleBtn}
-          >
-            <Icon name="hospital" size={18} color="#7047EB" strokeWidth={2} />
-            <Text style={styles.switchRoleBtnText}>Switch to Hospital View</Text>
-          </TouchableOpacity>
-        </View>
+
 
         {/* Sign Out Button */}
         <TouchableOpacity activeOpacity={0.8} onPress={handleLogout} style={styles.logoutBtn}>

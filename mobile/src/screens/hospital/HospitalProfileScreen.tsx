@@ -179,20 +179,6 @@ export const HospitalProfileScreen = ({ navigation }: any) => {
           </View>
         </Card>
 
-        {/* Presentation Switch Role Demo */}
-        <Card variant="flat" style={styles.demoCard}>
-          <Text style={styles.demoTitle}>Presentation Quick-Switch</Text>
-          <Text style={styles.demoDesc}>
-            Switch to the Donor view instantly without logging out:
-          </Text>
-          <Button
-            title="Switch to Donor Dashboard"
-            variant="outline"
-            size="sm"
-            onPress={() => switchUserRole('DONOR')}
-            style={{ marginTop: 8 }}
-          />
-        </Card>
 
         {/* Sign Out Button */}
         <Button

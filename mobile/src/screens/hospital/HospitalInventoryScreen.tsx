@@ -202,19 +202,6 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
               style={styles.transferBtn}
             />
 
-            <Card variant="flat" style={styles.demoCard}>
-              <Text style={styles.demoTitle}>Presentation Role Switcher</Text>
-              <Text style={styles.demoDesc}>
-                Switch directly to Donor Dashboard to view incoming ephemeral request:
-              </Text>
-              <Button
-                title="Switch to Donor Dashboard"
-                onPress={() => switchUserRole('DONOR')}
-                variant="outline"
-                size="sm"
-                style={{ marginTop: 8 }}
-              />
-            </Card>
           </View>
         }
       />

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
@@ -14,7 +15,8 @@ import { useAuth } from '../../store/AuthContext';
 import { BloodGroup, UserRole } from '../../types';
 
 export const RegisterScreen = ({ navigation }: any) => {
-  const { register, isLoading } = useAuth();
+  const { register, loginWithGoogle, completeGoogleRegistration, isLoading } = useAuth();
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [role, setRole] = useState<UserRole>('DONOR');
 
   // Common fields
@@ -72,6 +74,35 @@ export const RegisterScreen = ({ navigation }: any) => {
       }
     } catch (err: any) {
       Alert.alert('Registration Failed', err.message || 'Could not create account');
+    }
+  };
+
+  const handleGoogleSignUp = async () => {
+    try {
+      setGoogleLoading(true);
+      const res = await loginWithGoogle();
+      if (res.isNewUser) {
+        await completeGoogleRegistration({
+          idToken: res.firebaseIdToken!,
+          role,
+          name: name.trim() || res.googleData?.name || (role === 'DONOR' ? 'Blood Donor' : 'Hospital Partner'),
+          phone: phone.trim() || '+91 98765 43210',
+          bloodGroup,
+          dateOfBirth,
+          hospitalName: hospitalName.trim() || name.trim() || 'Hospital Partner',
+          licenseNumber: licenseNumber.trim() || 'LIC-PENDING',
+          location: {
+            latitude: role === 'DONOR' ? 12.9716 : 12.975,
+            longitude: role === 'DONOR' ? 77.5946 : 77.599,
+            city: city.trim() || 'Bengaluru',
+          },
+        });
+      }
+    } catch (err: any) {
+      if (err.code === 'SIGN_IN_CANCELLED' || err.message?.includes('cancelled')) return;
+      Alert.alert('Google Sign-Up Failed', err.message || 'Unable to sign up with Google');
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -198,6 +229,30 @@ export const RegisterScreen = ({ navigation }: any) => {
             style={styles.submitBtn}
           />
 
+          {/* Social Divider */}
+          <View style={styles.dividerRow}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>OR</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Google Sign Up Button */}
+          <TouchableOpacity
+            style={styles.googleBtn}
+            onPress={handleGoogleSignUp}
+            disabled={isLoading || googleLoading}
+            activeOpacity={0.8}
+          >
+            {googleLoading ? (
+              <ActivityIndicator size="small" color="#1F2937" />
+            ) : (
+              <View style={styles.googleBtnContent}>
+                <Icon name="google" size={18} />
+                <Text style={styles.googleBtnText}>Sign Up with Google</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
           <View style={styles.footerPrompt}>
             <Text style={styles.promptText}>Already registered? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
@@ -286,5 +341,46 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: '#DC2626',
     fontWeight: '700',
+  },
+  dividerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    ...typography.caption,
+    color: colors.textMuted,
+    paddingHorizontal: spacing.sm,
+    fontWeight: '600',
+  },
+  googleBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  googleBtnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  googleBtnText: {
+    ...typography.body,
+    color: '#1F2937',
+    fontWeight: '600',
   },
 });
