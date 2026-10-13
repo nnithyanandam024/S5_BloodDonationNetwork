@@ -10,3 +10,4 @@ export * from './Modal';
 export * from './Icon/Icon';
 export * from './QuotaProgressBar';
 export * from './FastTrackBadge';
+export * from './NotificationBanner';

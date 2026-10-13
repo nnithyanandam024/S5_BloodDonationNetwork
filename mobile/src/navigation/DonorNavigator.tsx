@@ -5,6 +5,7 @@ import { DonorHomeScreen } from '../screens/donor/DonorHomeScreen';
 import { DonorRequestsScreen } from '../screens/donor/DonorRequestsScreen';
 import { DonationHistoryScreen } from '../screens/donor/DonationHistoryScreen';
 import { DonorProfileScreen } from '../screens/donor/DonorProfileScreen';
+import { NotificationsScreen } from '../screens/common/NotificationsScreen';
 import { CustomBottomTabBar } from './CustomBottomTabBar';
 
 const Tab = createBottomTabNavigator();
@@ -30,6 +31,7 @@ export const DonorNavigator = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="DonorTabs" component={DonorTabs} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 };

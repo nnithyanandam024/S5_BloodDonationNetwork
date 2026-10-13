@@ -196,3 +196,23 @@ export interface EligibilityResult {
   reason?: string;
 }
 
+export type NotificationType =
+  | 'DISPATCH_INVITE'
+  | 'DONOR_COMMITTED'
+  | 'GAP_FULFILLED'
+  | 'DONATION_CONFIRMED'
+  | 'SYSTEM';
+
+export interface AppNotification {
+  id: string;
+  userId: string;
+  title: string;
+  body: string;
+  type: NotificationType;
+  requestId?: string;
+  bloodGroup?: BloodGroup;
+  isRead: boolean;
+  createdAt: string;
+}
+
+

@@ -7,6 +7,7 @@ import { CreateRequestScreen } from '../screens/hospital/CreateRequestScreen';
 import { RequestDetailsScreen } from '../screens/hospital/RequestDetailsScreen';
 import { HospitalInventoryScreen } from '../screens/hospital/HospitalInventoryScreen';
 import { HospitalProfileScreen } from '../screens/hospital/HospitalProfileScreen';
+import { NotificationsScreen } from '../screens/common/NotificationsScreen';
 import { CustomBottomTabBar } from './CustomBottomTabBar';
 
 const Tab = createBottomTabNavigator();
@@ -39,6 +40,7 @@ export const HospitalNavigator = () => {
       <Stack.Screen name="HospitalTabs" component={HospitalTabs} />
       <Stack.Screen name="CreateRequest" component={CreateRequestScreen} />
       <Stack.Screen name="RequestDetails" component={RequestDetailsScreen} />
+      <Stack.Screen name="Notifications" component={NotificationsScreen} />
     </Stack.Navigator>
   );
 };

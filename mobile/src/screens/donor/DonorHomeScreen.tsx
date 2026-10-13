@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { Card, StatusBadge, Button, Icon } from '../../components';
 import { useAuth } from '../../store/AuthContext';
+import { useNotification } from '../../store/NotificationContext';
 import { donorsApi } from '../../services/api';
 import { BloodRequest, EligibilityResult } from '../../types';
 import Svg, { Circle } from 'react-native-svg';
@@ -56,6 +57,7 @@ const AvatarProgressRing = ({
 
 export const DonorHomeScreen = ({ navigation }: any) => {
   const { user, toggleAvailability } = useAuth();
+  const { unreadCount } = useNotification();
   const [eligibility, setEligibility] = useState<EligibilityResult | null>(null);
   const [incomingRequests, setIncomingRequests] = useState<BloodRequest[]>([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -127,10 +129,18 @@ export const DonorHomeScreen = ({ navigation }: any) => {
           <TouchableOpacity
             activeOpacity={0.8}
             style={styles.notificationBtn}
-            onPress={() => navigation.navigate('Requests')}
+            onPress={() => navigation.navigate('Notifications')}
           >
             <Icon name="bell" size={20} color="#1F2937" strokeWidth={1.8} />
-            {incomingRequests.length > 0 && <View style={styles.redDotBadge} />}
+            {unreadCount > 0 ? (
+              <View style={styles.unreadCountBadge}>
+                <Text style={styles.unreadCountBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            ) : incomingRequests.length > 0 ? (
+              <View style={styles.redDotBadge} />
+            ) : null}
           </TouchableOpacity>
         </View>
 
@@ -465,6 +475,25 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
     backgroundColor: '#EF4444',
+  },
+  unreadCountBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: '#FFFFFF',
+  },
+  unreadCountBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 
   searchBar: {
