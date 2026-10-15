@@ -71,7 +71,7 @@ export const HospitalProfileScreen = ({ navigation }: any) => {
 
             {/* Verification Badges */}
             <View style={styles.profileAvatarRow}>
-              <View style={[styles.miniAvatar, { backgroundColor: '#C7D2FE', zIndex: 4 }]}>
+              <View style={[styles.miniAvatar, { backgroundColor: '#FECACA', zIndex: 4 }]}>
                 <Text style={styles.miniAvatarText}>ICU</Text>
               </View>
               <View style={[styles.miniAvatar, { backgroundColor: '#FDE68A', zIndex: 3, marginLeft: -8 }]}>
@@ -89,7 +89,7 @@ export const HospitalProfileScreen = ({ navigation }: any) => {
           {/* Verification Badge */}
           <View style={styles.profileCardRight}>
             <View style={styles.starCircle}>
-              <Icon name="sparkles" size={14} color="#7047EB" strokeWidth={2.5} />
+              <Icon name="sparkles" size={14} color="#DC2626" strokeWidth={2.5} />
             </View>
             <View style={styles.verifiedChip}>
               <Text style={styles.verifiedChipText}>VERIFIED</Text>
@@ -145,7 +145,7 @@ export const HospitalProfileScreen = ({ navigation }: any) => {
             <Text style={styles.statLabel}>Response Rate</Text>
           </Card>
           <Card variant="flat" style={styles.statCard}>
-            <Text style={[styles.statNumber, { color: '#7047EB' }]}>15 km</Text>
+            <Text style={[styles.statNumber, { color: '#DC2626' }]}>15 km</Text>
             <Text style={styles.statLabel}>Radar Coverage</Text>
           </Card>
           <Card variant="flat" style={styles.statCard}>
@@ -292,7 +292,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -311,11 +311,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   purplePassCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.25,
     shadowRadius: 16,
@@ -469,12 +469,12 @@ const styles = StyleSheet.create({
   demoCard: {
     borderRadius: 20,
     marginBottom: 20,
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FEE2E2',
   },
   demoTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   demoDesc: {
     fontSize: 12,

@@ -270,8 +270,8 @@ export const DonorHomeScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('History')}
             style={styles.categoryItem}
           >
-            <View style={[styles.categorySquircle, { backgroundColor: '#F1ECFE' }]}>
-              <Icon name="home" size={22} color="#7C3AED" strokeWidth={2} />
+            <View style={[styles.categorySquircle, { backgroundColor: '#FEE2E2' }]}>
+              <Icon name="home" size={22} color="#DC2626" strokeWidth={2} />
             </View>
             <Text style={styles.categoryLabel}>Camps</Text>
           </TouchableOpacity>
@@ -324,8 +324,8 @@ export const DonorHomeScreen = ({ navigation }: any) => {
           onPress={() => navigation.navigate('Requests')}
           style={styles.quickActionCard}
         >
-          <View style={[styles.quickActionIconBox, { backgroundColor: '#F1ECFE' }]}>
-            <Icon name="location-pin" size={20} color="#7C3AED" strokeWidth={2} />
+          <View style={[styles.quickActionIconBox, { backgroundColor: '#FEE2E2' }]}>
+            <Icon name="location-pin" size={20} color="#DC2626" strokeWidth={2} />
           </View>
           <View style={styles.quickActionTextBox}>
             <Text style={styles.quickActionTitle}>Find Local Services</Text>
@@ -348,8 +348,8 @@ export const DonorHomeScreen = ({ navigation }: any) => {
             <Switch
               value={isAvailable}
               onValueChange={handleToggleAvailability}
-              trackColor={{ false: '#E2E8F0', true: '#DDD6FE' }}
-              thumbColor={isAvailable ? '#7047EB' : '#FFFFFF'}
+              trackColor={{ false: '#E2E8F0', true: '#FECACA' }}
+              thumbColor={isAvailable ? '#DC2626' : '#FFFFFF'}
             />
           </View>
         </Card>
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
@@ -424,12 +424,12 @@ const styles = StyleSheet.create({
   avatarLetter: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   progressBadge: {
     position: 'absolute',
     bottom: -4,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 10,
     paddingHorizontal: 4,
     paddingVertical: 1,
@@ -559,11 +559,11 @@ const styles = StyleSheet.create({
   },
 
   purpleHeroCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -661,7 +661,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   categoriesRow: {
     flexDirection: 'row',
@@ -701,7 +701,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
   },
   inactiveDot: {
     width: 5,

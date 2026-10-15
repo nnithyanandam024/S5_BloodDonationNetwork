@@ -277,11 +277,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
   },
   afgcInfoBox: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FEE2E2',
     borderRadius: 12,
     padding: 12,
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#FECACA',
     marginTop: spacing.md,
   },
   afgcInfoTop: {
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
   afgcInfoTitle: {
     fontSize: 10,
     fontWeight: '800',
-    color: '#7047EB',
+    color: '#DC2626',
     letterSpacing: 0.5,
   },
   togglePill: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   togglePillActive: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
   },
   togglePillInactive: {
     backgroundColor: '#9CA3AF',

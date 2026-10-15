@@ -57,7 +57,7 @@ const AvatarProgressRing = ({ percentage = 60, size = 46 }: { percentage?: numbe
           cx="23"
           cy="23"
           r="21"
-          stroke="#7047EB"
+          stroke="#DC2626"
           strokeWidth="2.5"
           fill="none"
           strokeDasharray="132"
@@ -182,8 +182,8 @@ export const DesignReferenceScreen = ({ navigation }: any) => {
 
         {/* Category 3: Home (Lavender) */}
         <TouchableOpacity activeOpacity={0.8} style={styles.categoryItem}>
-          <View style={[styles.categorySquircle, { backgroundColor: '#F1ECFE' }]}>
-            <Icon name="home" size={22} color="#7C3AED" strokeWidth={2} />
+          <View style={[styles.categorySquircle, { backgroundColor: '#FEE2E2' }]}>
+            <Icon name="home" size={22} color="#DC2626" strokeWidth={2} />
           </View>
           <Text style={styles.categoryLabel}>Home</Text>
         </TouchableOpacity>
@@ -226,8 +226,8 @@ export const DesignReferenceScreen = ({ navigation }: any) => {
 
       {/* Quick Action Item 2 */}
       <TouchableOpacity activeOpacity={0.8} style={styles.quickActionCard}>
-        <View style={[styles.quickActionIconBox, { backgroundColor: '#F1ECFE' }]}>
-          <Icon name="location-pin" size={20} color="#7C3AED" strokeWidth={2} />
+        <View style={[styles.quickActionIconBox, { backgroundColor: '#FEE2E2' }]}>
+          <Icon name="location-pin" size={20} color="#DC2626" strokeWidth={2} />
         </View>
         <View style={styles.quickActionTextBox}>
           <Text style={styles.quickActionTitle}>Find Local Services</Text>
@@ -284,7 +284,7 @@ export const DesignReferenceScreen = ({ navigation }: any) => {
             <View style={[styles.stackAvatar, { backgroundColor: '#FED7AA', zIndex: 3, marginLeft: -12 }]}>
               <Text style={styles.stackAvatarText}>M</Text>
             </View>
-            <View style={[styles.stackAvatar, { backgroundColor: '#DDD6FE', zIndex: 2, marginLeft: -12 }]}>
+            <View style={[styles.stackAvatar, { backgroundColor: '#FECACA', zIndex: 2, marginLeft: -12 }]}>
               <Text style={styles.stackAvatarText}>S</Text>
             </View>
             <View style={[styles.stackAvatarBadge, { zIndex: 1, marginLeft: -12 }]}>
@@ -383,7 +383,7 @@ export const DesignReferenceScreen = ({ navigation }: any) => {
 
           {/* Overlapping small avatar chips */}
           <View style={styles.profileAvatarRow}>
-            <View style={[styles.miniAvatar, { backgroundColor: '#C7D2FE', zIndex: 4 }]}>
+            <View style={[styles.miniAvatar, { backgroundColor: '#FECACA', zIndex: 4 }]}>
               <Text style={styles.miniAvatarText}>A</Text>
             </View>
             <View style={[styles.miniAvatar, { backgroundColor: '#FDE68A', zIndex: 3, marginLeft: -8 }]}>
@@ -408,7 +408,7 @@ export const DesignReferenceScreen = ({ navigation }: any) => {
             <Text style={styles.ringsText}>11.12.22 (3 yr)</Text>
           </View>
           <View style={styles.personPhotoMock}>
-            <Icon name="user" size={48} color="#7047EB" strokeWidth={1.5} />
+            <Icon name="user" size={48} color="#DC2626" strokeWidth={1.5} />
           </View>
         </View>
       </View>
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F3F4F6',
   },
   switcherTabActive: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
   },
   switcherText: {
     fontSize: 12,
@@ -686,7 +686,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
@@ -694,12 +694,12 @@ const styles = StyleSheet.create({
   avatarLetter: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   progressBadge: {
     position: 'absolute',
     bottom: -4,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 10,
     paddingHorizontal: 4,
     paddingVertical: 1,
@@ -781,11 +781,11 @@ const styles = StyleSheet.create({
 
   // Purple Hero Card
   purpleHeroCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 16,
@@ -884,7 +884,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   categoriesRow: {
     flexDirection: 'row',
@@ -924,7 +924,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
   },
   inactiveDot: {
     width: 5,
@@ -1071,7 +1071,7 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 10,
@@ -1088,7 +1088,7 @@ const styles = StyleSheet.create({
   messageNowText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#DC2626',
   },
 
   detailedActionCard: {
@@ -1237,7 +1237,7 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -1245,11 +1245,11 @@ const styles = StyleSheet.create({
   },
 
   purpleIdCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 24,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -1417,14 +1417,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   tabLabelActive: {
-    color: '#7047EB',
+    color: '#DC2626',
     fontWeight: '700',
   },
   activeDotUnderline: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     marginTop: 3,
   },
   centerFabContainer: {
@@ -1438,12 +1438,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: '#FFFFFF',
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

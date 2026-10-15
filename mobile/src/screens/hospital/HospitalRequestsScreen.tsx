@@ -132,7 +132,7 @@ export const HospitalRequestsScreen = ({ navigation }: any) => {
           style={styles.iconCircleBtn}
           onPress={() => navigation.navigate('CreateRequest')}
         >
-          <Icon name="plus" size={18} color="#7047EB" strokeWidth={2.5} />
+          <Icon name="plus" size={18} color="#DC2626" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
     borderColor: '#E5E7EB',
   },
   filterChipActive: {
-    backgroundColor: '#7047EB',
-    borderColor: '#7047EB',
+    backgroundColor: '#DC2626',
+    borderColor: '#DC2626',
   },
   filterChipText: {
     fontSize: 12,
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
   },
   bloodTagNormal: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
   },
   bloodTagText: {
     fontSize: 16,

@@ -79,7 +79,7 @@ export const NotificationBanner: React.FC<NotificationBannerProps> = ({
 
   const iconName = isEmergency ? 'alert-siren' : 'bell';
   const iconColor = isEmergency ? colors.primary : colors.violetPrimary;
-  const accentBg = isEmergency ? '#FEF2F2' : '#F5F3FF';
+  const accentBg = '#FEF2F2';
 
   return (
     <Animated.View

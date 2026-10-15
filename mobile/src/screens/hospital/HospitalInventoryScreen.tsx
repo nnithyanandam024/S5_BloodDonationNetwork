@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { Card, Button, Icon } from '../../components';
 import { BloodGroup, InventoryUnit } from '../../types';
-import { useAuth } from '../../store/AuthContext';
 import { requestsApi } from '../../services/api';
 
 interface InventoryGroupSummary {
@@ -18,7 +17,6 @@ interface InventoryGroupSummary {
 const DEFAULT_GROUPS: BloodGroup[] = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 export const HospitalInventoryScreen = ({ navigation }: any) => {
-  const { switchUserRole } = useAuth();
   const [inventoryList, setInventoryList] = useState<InventoryGroupSummary[]>([]);
   const [totalReserves, setTotalReserves] = useState(0);
   const [totalReserved, setTotalReserved] = useState(0);
@@ -93,7 +91,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
           style={styles.iconCircleBtn}
           onPress={() => navigation.navigate('CreateRequest')}
         >
-          <Icon name="plus" size={18} color="#7047EB" strokeWidth={2.5} />
+          <Icon name="plus" size={18} color="#DC2626" strokeWidth={2.5} />
         </TouchableOpacity>
       </View>
 
@@ -101,6 +99,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
         data={inventoryList}
         keyExtractor={(item) => item.group}
         numColumns={2}
+        style={styles.listContainer}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -116,7 +115,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
           <View style={styles.summaryCard}>
             <View style={styles.summaryLeft}>
               <View style={styles.summaryIconSquircle}>
-                <Icon name="flask" size={22} color="#7047EB" strokeWidth={2.2} />
+                <Icon name="flask" size={22} color="#DC2626" strokeWidth={2.2} />
               </View>
               <View>
                 <Text style={styles.summaryTitle}>Total Stock: {totalReserves} Units</Text>
@@ -154,7 +153,7 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
                       ? { color: '#DC2626' }
                       : isLow
                       ? { color: '#D97706' }
-                      : { color: '#7047EB' },
+                      : { color: '#DC2626' },
                   ]}
                 >
                   {item.group}
@@ -194,17 +193,16 @@ export const HospitalInventoryScreen = ({ navigation }: any) => {
             </Card>
           );
         }}
-        ListFooterComponent={
-          <View style={styles.footer}>
-            <Button
-              title="+ Create Emergency Requisition"
-              onPress={() => navigation.navigate('CreateRequest')}
-              style={styles.transferBtn}
-            />
-
-          </View>
-        }
       />
+
+      {/* Docked Emergency Requisition Action Bar */}
+      <View style={styles.bottomBarContainer}>
+        <Button
+          title="+ Create Emergency Requisition"
+          onPress={() => navigation.navigate('CreateRequest')}
+          style={styles.transferBtn}
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -240,12 +238,15 @@ const styles = StyleSheet.create({
   screenSubtitle: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#7047EB',
+    color: '#DC2626',
     marginTop: 2,
+  },
+  listContainer: {
+    flex: 1,
   },
   list: {
     paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   summaryCard: {
     flexDirection: 'row',
@@ -268,7 +269,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -323,7 +324,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   badgeOptimal: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FEE2E2',
   },
   badgeLow: {
     backgroundColor: '#FEF3C7',
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   reservedNote: {
     fontSize: 10,
     fontWeight: '600',
-    color: '#7047EB',
+    color: '#DC2626',
     marginTop: 2,
   },
   statusTag: {
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   statusTagOptimal: {
-    backgroundColor: '#F3E8FF',
+    backgroundColor: '#FEE2E2',
   },
   statusTagLow: {
     backgroundColor: '#FEF3C7',
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   statusTagTextOptimal: {
-    color: '#7047EB',
+    color: '#DC2626',
   },
   statusTagTextLow: {
     color: '#D97706',
@@ -379,27 +380,14 @@ const styles = StyleSheet.create({
   statusTagTextCritical: {
     color: '#DC2626',
   },
-  footer: {
-    marginTop: 12,
+  bottomBarContainer: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    marginBottom: Platform.OS === 'ios' ? 92 : 82,
+    backgroundColor: '#F8F9FE',
   },
   transferBtn: {
-    marginBottom: 16,
-  },
-  demoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  demoTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1F2937',
-  },
-  demoDesc: {
-    fontSize: 11,
-    color: '#6B7280',
-    marginTop: 4,
+    width: '100%',
   },
 });

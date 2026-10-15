@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   tabLabelActive: {
-    color: '#7047EB',
+    color: colors.primary,
     fontWeight: '700',
   },
   tabLabelInactive: {
@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-    backgroundColor: '#7047EB',
+    backgroundColor: colors.primary,
     marginTop: 3,
   },
   centerFabSlot: {
@@ -247,12 +247,12 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#7047EB',
+    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 4,
     borderColor: '#FFFFFF',
-    shadowColor: '#7047EB',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,
     shadowRadius: 10,

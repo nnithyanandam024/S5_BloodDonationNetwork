@@ -61,8 +61,8 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
         </View>
 
         <View style={styles.statBox}>
-          <View style={[styles.statIconCircle, { backgroundColor: '#EDE9FE' }]}>
-            <Icon name="star" size={18} color="#7047EB" strokeWidth={2.2} />
+          <View style={[styles.statIconCircle, { backgroundColor: '#FEE2E2' }]}>
+            <Icon name="star" size={18} color="#DC2626" strokeWidth={2.2} />
           </View>
           <Text style={styles.statNumber}>{totalDonations * 150}</Text>
           <Text style={styles.statCaption}>Points</Text>
@@ -129,7 +129,7 @@ export const DonationHistoryScreen = ({ navigation }: any) => {
 
             <View style={styles.detailsRow}>
               <View style={styles.detailPill}>
-                <Icon name="droplet" size={13} color="#7047EB" strokeWidth={2} />
+                <Icon name="droplet" size={13} color="#DC2626" strokeWidth={2} />
                 <Text style={styles.detailPillText}>
                   {item.bloodGroup} • {item.unitsGiven} Unit (450 ml)
                 </Text>
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FEE2E2',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 12,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   detailPillText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   verifiedChip: {
     flexDirection: 'row',

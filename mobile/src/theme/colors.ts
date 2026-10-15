@@ -38,14 +38,14 @@ export const colors = {
   statusCompleted: '#475569',
   statusCompletedBg: '#F1F5F9',
 
-  // UI Reference Palette (Signature Violet / Soft Pastels / Dark Accents)
-  violetPrimary: '#7047EB',
-  violetDark: '#562DD4',
-  violetLight: '#8C68FC',
-  violetMuted: '#E4DCFD',
-  violetSoft: '#F3EFFF',
-  violetCardBg: '#6F45EC',
-  violetCardEnd: '#875BFF',
+  // UI Palette (Healthcare Crimson / Soft Red Pastels)
+  violetPrimary: '#DC2626',
+  violetDark: '#B91C1C',
+  violetLight: '#EF4444',
+  violetMuted: '#FECACA',
+  violetSoft: '#FEF2F2',
+  violetCardBg: '#DC2626',
+  violetCardEnd: '#EF4444',
 
   darkPill: '#151622',
   darkPillText: '#FFFFFF',
@@ -55,14 +55,14 @@ export const colors = {
   catPinkIcon: '#E11D48',
   catPeachBg: '#FFF2E8',
   catPeachIcon: '#F97316',
-  catLavenderBg: '#F1ECFE',
-  catLavenderIcon: '#7C3AED',
+  catLavenderBg: '#FEF2F2',
+  catLavenderIcon: '#DC2626',
   catCyanBg: '#E2F6FC',
   catCyanIcon: '#0284C7',
 
   // Floating tab bar
   tabBarBg: '#FFFFFF',
-  tabBarActive: '#7047EB',
+  tabBarActive: '#DC2626',
   tabBarInactive: '#9CA3AF',
-  tabBarFab: '#7047EB',
+  tabBarFab: '#DC2626',
 };

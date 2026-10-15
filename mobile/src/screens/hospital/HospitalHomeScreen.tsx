@@ -283,8 +283,8 @@ export const HospitalHomeScreen = ({ navigation }: any) => {
             onPress={() => navigation.navigate('Inventory')}
             style={styles.categoryItem}
           >
-            <View style={[styles.categorySquircle, { backgroundColor: '#F1ECFE' }]}>
-              <Icon name="flask" size={22} color="#7C3AED" strokeWidth={2} />
+            <View style={[styles.categorySquircle, { backgroundColor: '#FEE2E2' }]}>
+              <Icon name="flask" size={22} color="#DC2626" strokeWidth={2} />
             </View>
             <Text style={styles.categoryLabel}>Reserves</Text>
           </TouchableOpacity>
@@ -359,8 +359,8 @@ export const HospitalHomeScreen = ({ navigation }: any) => {
           onPress={() => navigation.navigate('Inventory')}
           style={styles.quickActionCard}
         >
-          <View style={[styles.quickActionIconBox, { backgroundColor: '#F1ECFE' }]}>
-            <Icon name="flask" size={20} color="#7C3AED" strokeWidth={2} />
+          <View style={[styles.quickActionIconBox, { backgroundColor: '#FEE2E2' }]}>
+            <Icon name="flask" size={20} color="#DC2626" strokeWidth={2} />
           </View>
           <View style={styles.quickActionTextBox}>
             <Text style={styles.quickActionTitle}>Blood Bank Reserves</Text>
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'absolute',
@@ -494,12 +494,12 @@ const styles = StyleSheet.create({
   avatarLetter: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   progressBadge: {
     position: 'absolute',
     bottom: -4,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 10,
     paddingHorizontal: 4,
     paddingVertical: 1,
@@ -626,11 +626,11 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   purpleHeroCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.28,
     shadowRadius: 18,
@@ -733,7 +733,7 @@ const styles = StyleSheet.create({
   viewAllText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#DC2626',
   },
   categoriesRow: {
     flexDirection: 'row',
@@ -768,7 +768,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 5,
     borderRadius: 3,
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
   },
   inactiveDot: {
     width: 5,
@@ -845,8 +845,8 @@ const styles = StyleSheet.create({
   quickActionAmount: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#7047EB',
-    backgroundColor: '#F3EFFF',
+    color: '#DC2626',
+    backgroundColor: '#FEE2E2',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -883,7 +883,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEE2E2',
   },
   bloodTagNormal: {
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
   },
   bloodTagText: {
     fontSize: 16,

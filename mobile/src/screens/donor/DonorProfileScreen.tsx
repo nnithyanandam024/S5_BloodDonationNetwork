@@ -67,7 +67,7 @@ export const DonorProfileScreen = ({ navigation }: any) => {
 
             {/* Donor Network Community Avatar Chips */}
             <View style={styles.profileAvatarRow}>
-              <View style={[styles.miniAvatar, { backgroundColor: '#C7D2FE', zIndex: 4 }]}>
+              <View style={[styles.miniAvatar, { backgroundColor: '#FECACA', zIndex: 4 }]}>
                 <Text style={styles.miniAvatarText}>O+</Text>
               </View>
               <View style={[styles.miniAvatar, { backgroundColor: '#FDE68A', zIndex: 3, marginLeft: -8 }]}>
@@ -77,7 +77,7 @@ export const DonorProfileScreen = ({ navigation }: any) => {
                 <Text style={styles.miniAvatarText}>B+</Text>
               </View>
               <View style={[styles.miniAddBtn, { zIndex: 1, marginLeft: -8 }]}>
-                <Icon name="droplet" size={12} color="#7047EB" strokeWidth={2.5} />
+                <Icon name="droplet" size={12} color="#DC2626" strokeWidth={2.5} />
               </View>
             </View>
           </View>
@@ -92,7 +92,7 @@ export const DonorProfileScreen = ({ navigation }: any) => {
               <Text style={styles.ringsText}>Verified (Active)</Text>
             </View>
             <View style={styles.personPhotoMock}>
-              <Icon name="user" size={44} color="#7047EB" strokeWidth={1.6} />
+              <Icon name="user" size={44} color="#DC2626" strokeWidth={1.6} />
             </View>
           </View>
         </View>
@@ -266,8 +266,8 @@ const styles = StyleSheet.create({
     height: 28,
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#DDD6FE',
-    backgroundColor: '#F3EFFF',
+    borderColor: '#FECACA',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -289,12 +289,12 @@ const styles = StyleSheet.create({
     width: 86,
     height: 86,
     borderRadius: 43,
-    backgroundColor: '#EDE9FE',
+    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
     borderColor: '#FFFFFF',
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
@@ -302,11 +302,11 @@ const styles = StyleSheet.create({
   },
 
   purpleIdCard: {
-    backgroundColor: '#7047EB',
+    backgroundColor: '#DC2626',
     borderRadius: 24,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#7047EB',
+    shadowColor: '#DC2626',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -426,16 +426,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F3EFFF',
+    backgroundColor: '#FEE2E2',
     borderWidth: 1,
-    borderColor: '#DDD6FE',
+    borderColor: '#FECACA',
     borderRadius: 18,
     paddingVertical: 10,
   },
   switchRoleBtnText: {
     fontSize: 13,
     fontWeight: '700',
-    color: '#7047EB',
+    color: '#DC2626',
   },
 
   logoutBtn: {
